@@ -1,0 +1,54 @@
+:root {
+  --main-body-color: #ffffff;
+  --main-title-color: #0f0f0f;
+  --main-subtitle-color: #5e6263;
+  --main-border-color: #e8e8e8;
+
+  /* ===== Brand Colors ===== */
+  --primary: #2516ff;
+  --secondary: #ffffff;
+
+  /* ===== Status Colors ===== */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #0ea5e9;
+
+  /* ===== Background ===== */
+  --bg-body: #ffffff;
+  --bg-white: #ffffff;
+  --bg-light: #f1f5f9;
+  --bg-card: #ffffff;
+
+  /* ===== Text ===== */
+  --text-primary: #0f0f0f;
+  --text-secondary: #5e6263;
+  --text-muted: #a3a6a6;
+  --text-white: #ffffff;
+
+  /* ===== Border ===== */
+  --border-color: #e8e8e8;
+
+  /* ===== Hover ===== */
+  --hover-primary: #2516ff7c;
+  --hover-secondary: #ffffff7c;
+
+  /* ===== Shadow ===== */
+  --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 20px 50px rgba(15, 15, 15, 0.12);
+
+  /* ===== Border Radius ===== */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-round: 50%;
+  --radius-pill: 10px;
+
+  /* ===== Font ===== */
+  --font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* ===== Transition ===== */
+  --transition: all 0.3s ease;
+}

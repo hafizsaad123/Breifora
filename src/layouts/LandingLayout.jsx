@@ -1,15 +1,13 @@
 import { Outlet } from "react-router-dom";
-// import Navbar from "../components/Navbar";
 // import Footer from "../components/Footer";
 
+// Note: Home renders its own <Navbar /> inside <Hero />, since the navbar
+// sits on top of the hero's sky background. Other landing pages (About,
+// Pricing, etc.) should import Navbar from "../components/Navbar/Navbar"
+// directly until a shared marketing header/footer is added here.
 export default function LandingLayout() {
   return (
     <div className="landing-layout">
-      {/* <Navbar /> */}
-      <header style={{ padding: "1rem", borderBottom: "1px solid #eee" }}>
-        <nav>Landing Navbar (placeholder)</nav>
-      </header>
-
       <main style={{ minHeight: "80vh" }}>
         <Outlet />
       </main>

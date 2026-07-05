@@ -1,12 +1,15 @@
+@import "./assets/styles/variables.css";
+@import "./assets/styles/buttons.css";
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #fafafa;
-  color: #1a1a1a;
+  font-family: var(--font-family);
+  background: var(--bg-body);
+  color: var(--text-primary);
 }
 
 a {
