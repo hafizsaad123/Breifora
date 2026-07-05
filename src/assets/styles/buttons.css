@@ -13,7 +13,7 @@
 }
 
 .btn--sm {
-  padding: 0.55rem 1.25rem;
+  padding: 0.65rem 1.25rem;
   font-size: 0.85rem;
 }
 
@@ -26,6 +26,7 @@
   background: var(--primary);
   color: var(--text-white);
   box-shadow: var(--shadow-sm);
+  border: 2px solid var(--btn-primary-border-color);
 }
 
 .btn--primary:hover {

@@ -28,6 +28,7 @@
 
   /* ===== Border ===== */
   --border-color: #e8e8e8;
+  --btn-primary-border-color: #1000EA;
 
   /* ===== Hover ===== */
   --hover-primary: #2516ff7c;

@@ -1,16 +1,52 @@
-.hero {
+/* .hero {
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #bfe6f7 0%, #d9f0fb 45%, #f4fbfe 100%);
   padding-bottom: 6rem;
-  margin: 10px;
+  margin: 15px;
   border-radius: 20px;
-
   background-image: url(../../assets/hero/hero_C.png);
   background-repeat: no-repeat;
   background-size: contain;
+} */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 6rem;
+  margin: 15px;
+  border-radius: 20px;
+  /* Image ko base background banaya */
+  background-image: url(../../assets/hero/hero_C.png);
+  background-repeat: no-repeat;
+  background-size: cover; /* 'contain' ki jagah 'cover' zyada smooth blend deta hai, aap check kar sakte hain */
+  background-position: top center;
 }
 
+.hero:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* Isko image ke upar layer karne ke liye */
+  
+  /* Top (0%) ko transparent rakha taaki image saaf dikhe.
+    Middle (45%) se color shuru hoga aur bottom (100%) tak pure white (#ffffff) ho jayega.
+  */
+  background:linear-gradient(
+    180deg, 
+    rgba(255, 255, 255, 0) -109%, 
+    rgba(217, 240, 251, 0.5) 45%, 
+    #ffffff 100%
+  );
+  
+  /* Agar aapko text/content upar dikhana hai to yeh line zaroori hai */
+  pointer-events: none; 
+}
+
+/* Hero ke andar jo bhi text ya buttons hain unko gradient ke upar lane ke liye */
+.hero > * {
+  position: relative !important;
+  z-index: 2 !important;
+}
 .hero__sky {
   position: absolute;
   inset: 0;
