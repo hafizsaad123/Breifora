@@ -1,0 +1,192 @@
+/* Container Layout */
+.workflow-section {
+  font-family: var(--font-family);
+  background-color: var(--bg-body);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+
+}
+
+/* Header Text Alignments */
+.workflow-header {
+  text-align: center;
+  padding: 5rem 2rem 3rem 2rem;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.workflow-header h2 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.03em;
+}
+
+.workflow-header p {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Three Column Grid Structure */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border-color);
+}
+
+.workflow-card {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+  overflow: hidden;
+}
+
+.workflow-grid .workflow-card:last-child {
+  border-right: none;
+}
+
+/* Text Meta Info Container */
+.card-info-area {
+  padding: 2rem;
+  margin-top: auto;
+}
+
+.step-badge {
+  background-color: var(--primary);
+  color: var(--text-white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.card-info-area h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.02em;
+}
+
+.card-info-area p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Mockup UI Previews Styling */
+.card-preview-area {
+  height: 200px;
+  background-color: #fcfdfe;
+  border-bottom: 1px solid #f1f1f1;
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Step 1 Native UI Skeleton */
+.mock-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+.mock-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #8c9196;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.mock-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4d5156;
+}
+.mock-nav-item.active {
+  background-color: #f1efff;
+  color: #5544ff;
+}
+.mock-nav-item .badge {
+  margin-left: auto;
+  background-color: #f1efff;
+  color: #5544ff;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+}
+.mock-nav-item.dimmed {
+  opacity: 0.25;
+}
+
+/* Step 2 Native UI Skeleton */
+.mock-dashboard-widget {
+  background: white;
+  border: 1px solid #edf0f2;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.widget-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #2b2d31;
+}
+.widget-header .dots { color: #ccd1d7; }
+.widget-stats { display: flex; gap: 1.5rem; }
+.stat-box { flex: 1; }
+.stat-label { font-size: 0.65rem; color: #8a9099; font-weight: 600; }
+.stat-val { font-size: 1.3rem; font-weight: 700; color: #1e2022; display: flex; align-items: center; gap: 0.4rem; margin-top: 0.25rem;}
+.stat-trend { font-size: 0.65rem; padding: 0.1rem 0.3rem; border-radius: 4px; }
+.stat-trend.up { background: #ecfdf5; color: #10b981; }
+.stat-trend.down { background: #fef2f2; color: #ef4444; }
+
+/* Step 3 Native UI Skeleton */
+.mock-messages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.mock-messages-header .title { font-weight: 800; font-size: 0.9rem; color: #1e2022; }
+.mock-dropdown { font-size: 0.75rem; border: 1px solid #e1e4e8; padding: 0.2rem 0.5rem; border-radius: 6px; color: #5c6066; background: #fff;}
+.mock-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.7rem; }
+.mock-table th { color: #8a9099; font-weight: 600; padding: 0.4rem 0.2rem; border-bottom: 1px solid #edf0f2; }
+.mock-table td { padding: 0.5rem 0.2rem; border-bottom: 1px solid #edf0f2; color: #5c6066;}
+.user-cell { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; color: #1e2022; }
+.avatar { width: 16px; height: 16px; background: #e0e4fc; border-radius: 50%; font-size: 0.55rem; display: flex; align-items: center; justify-content: center; color: #4f46e5; }
+.email-cell { color: #9ca3af; }
+.text-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+  .workflow-card {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+}

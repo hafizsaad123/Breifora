@@ -12,9 +12,11 @@
 .hero {
   position: relative;
   overflow: hidden;
-  padding-bottom: 6rem;
-  margin: 15px;
-  border-radius: 20px;
+  /* padding-bottom: 6rem; */
+  margin: 15px 15px 0px 15px;
+  /* border-radius: 20px; */
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
   /* Image ko base background banaya */
   background-image: url(../../assets/hero/hero_C.png);
   background-repeat: no-repeat;

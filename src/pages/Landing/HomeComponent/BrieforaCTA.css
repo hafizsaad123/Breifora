@@ -1,0 +1,91 @@
+/* Container Layout Matrix */
+.briefora-cta-section {
+  font-family: var(--font-family);
+  background-color: var(--bg-body);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 0rem 6rem 0rem;
+    border-bottom: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
+
+/* Subtle Card Outer Box Frame */
+.cta-card {
+  background-color: #f9faff; /* Matching the ultra-light blue/grey container tint */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Typography Layouts */
+.cta-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin: 0 0 1.25rem 0;
+  letter-spacing: -0.03em;
+}
+
+/* Inline Sparkle Emphasis Accentuation */
+.sparkle-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-primary);
+}
+
+.sparkle-icon {
+  color: var(--primary);
+  font-size: 2.2rem;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.cta-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 2.5rem 0;
+}
+
+/* Primary Conversion Button */
+.cta-primary-btn {
+  background-color: var(--primary);
+  color: var(--text-white);
+  border: 1px solid var(--btn-primary-border-color);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.85rem 2.25rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.cta-primary-btn:hover {
+  opacity: 0.95;
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive configurations for mobile displays */
+@media (max-width: 768px) {
+  .cta-card {
+    padding: 3.5rem 1.5rem;
+  }
+  .cta-title {
+    font-size: 1.85rem;
+  }
+  .cta-subtitle br {
+    display: none; /* Collapses clean linebreaks smoothly on tiny views */
+  }
+}

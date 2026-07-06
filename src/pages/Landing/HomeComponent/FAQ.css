@@ -1,0 +1,124 @@
+/* Section Container Layout */
+.faq-section {
+  font-family: var(--font-family);
+  background-color: var(--bg-body);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-bottom: 6rem;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+/* Header Sections Styling */
+.faq-header {
+  text-align: center;
+  padding: 6rem 2rem 3.5rem 2rem;
+}
+
+.faq-header h2 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin-bottom: 1rem;
+  letter-spacing: -0.03em;
+}
+
+.faq-header p {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 550px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Accordion Outer Frame */
+.faq-container {
+  max-width: 680px;
+  margin: 0 auto;
+  border-top: 1px solid var(--border-color);
+  padding: 0 1rem;
+}
+
+/* Individual Rows Grid Formatting */
+.faq-item {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+}
+
+/* Button Trigger Headers */
+.faq-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 1.5rem 0;
+  cursor: pointer;
+  text-align: left;
+  gap: 1.5rem;
+}
+
+.faq-question {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+/* Dynamic Rounded Action Icon */
+.faq-icon-btn {
+  background-color: var(--primary);
+  color: var(--text-white);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.faq-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* CSS Transition Accordion Wrapper Drawer */
+.faq-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease-out;
+}
+
+.faq-inner-text {
+  overflow: hidden;
+}
+
+.faq-inner-text p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem 0;
+  max-width: 600px;
+}
+
+/* Animated Expanded Accordion Open States */
+.faq-item.open .faq-content {
+  grid-template-rows: 1fr;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .faq-header h2 {
+    font-size: 1.9rem;
+  }
+  .faq-question {
+    font-size: 1rem;
+  }
+}
