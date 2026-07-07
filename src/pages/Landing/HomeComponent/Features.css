@@ -1,0 +1,78 @@
+/* Container layout using CSS grid to match the asymmetric cell structure */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: 100%;
+    max-width: 1000px;
+  margin: 0 auto;
+  border-left: 1px solid var(--border-color);
+  background-color: var(--bg-body);
+  font-family: var(--font-family);
+}
+
+/* Base feature card layout */
+.feature-card {
+  padding: 3rem;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+/* Custom layout sizing for the asymmetric bottom row */
+.features-grid .feature-card:nth-child(3) {
+  grid-column: span 1;
+}
+
+.features-grid .feature-card:nth-child(4) {
+  grid-column: span 1;
+}
+
+/* Icon configuration styling matching the image */
+.feature-icon-wrapper {
+  background-color: var(--primary);
+  color: var(--text-white);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.feature-icon-wrapper svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Text Element Layout Styles */
+.feature-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.feature-description {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Responsive view layout for smaller screen sizing breakpoints */
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-card {
+    padding: 2rem;
+  }
+}
