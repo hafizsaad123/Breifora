@@ -1,0 +1,65 @@
+/* Container layout matching the image styling */
+.briefora-container {
+  font-family: var(--font-family);
+  background-color: var(--bg-body);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+/* Logo Ticker Section */
+.logo-ticker {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+/* Main Hero Body */
+.hero-content {
+  padding: 5rem 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color); /* Bottom border slice visible in image */
+}
+
+.hero-description {
+  max-width: 600px;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  font-weight: 400;
+  text-align: left;
+}
+
+/* Highlighted Brand Badge styling */
+.brand-badge {
+  background-color: var(--primary);
+  color: var(--text-white);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  display: inline-block;
+  line-height: 1.2;
+}
+.bar_line{
+    width: 100%;
+     border: 2px solid var(--border-color);
+}

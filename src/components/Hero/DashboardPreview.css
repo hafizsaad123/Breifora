@@ -2,10 +2,12 @@
 .dashboard-preview {
   max-width: 1080px;
   margin: 3.5rem auto 0;
-  padding: 15px;
+  padding: 15px 15px 0px 15px;
   background: #E3F6FB;
   border: 3px solid #EBEBEB;
-  border-radius: 40px;
+  /* border-radius: 40px; */
+  border-radius-top-left: 40px;
+  border-radius-top-right: 40px;
 }
 .dashboard-preview img{
   width: 100%;
