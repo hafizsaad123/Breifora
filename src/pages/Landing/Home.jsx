@@ -1,4 +1,5 @@
 import Hero from "../../components/Hero/Hero";
+import BrieforaCTA from "./HomeComponent/BrieforaCTA";
 import Comparison from "./HomeComponent/Comparison";
 import FAQ from "./HomeComponent/FAQ";
 import Features from "./HomeComponent/Features";
@@ -17,6 +18,7 @@ export default function Home() {
       <Comparison />
       <Pricing />
       <FAQ />
+      <BrieforaCTA />
       {/* Benefits, How It Works, Pricing, Testimonials, FAQs sections go here */}
     </div>
   );
