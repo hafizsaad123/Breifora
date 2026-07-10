@@ -1,15 +1,40 @@
-import React from 'react';
-import './Comparison.css';
+import React from "react";
+import "./Comparison.css";
+import BLogo from "../../../assets/logo/f_logo.png";
 
 const comparisonRows = [
-  { others: "Gathers basic text entries", briefora: "Extracts true creative intent" },
-  { others: "Forced signups or account setup", briefora: "Zero login, zero friction" },
-  { others: "Hours of manual brief drafting", briefora: "Instant AI-generated blueprints" },
-  { others: "Ignores aesthetic context", briefora: "Translates stylistic adjectives" },
-  { others: "Overwhelming, endless form fields", briefora: "10 plain-language visual prompts" },
-  { others: "Invites vague, unbilled direction edits", briefora: "Halts early scope creep completely" },
-  { others: "Messy email text or raw spreadsheets", briefora: "Live workspace & clean PDF exports" },
-  { others: "Generic, low-end template feel", briefora: "Premium high-ticket studio vibe" }
+  {
+    others: "Gathers basic text entries",
+    briefora: "Extracts true creative intent",
+  },
+  {
+    others: "Forced signups or account setup",
+    briefora: "Zero login, zero friction",
+  },
+  {
+    others: "Hours of manual brief drafting",
+    briefora: "Instant AI-generated blueprints",
+  },
+  {
+    others: "Ignores aesthetic context",
+    briefora: "Translates stylistic adjectives",
+  },
+  {
+    others: "Overwhelming, endless form fields",
+    briefora: "10 plain-language visual prompts",
+  },
+  {
+    others: "Invites vague, unbilled direction edits",
+    briefora: "Halts early scope creep completely",
+  },
+  {
+    others: "Messy email text or raw spreadsheets",
+    briefora: "Live workspace & clean PDF exports",
+  },
+  {
+    others: "Generic, low-end template feel",
+    briefora: "Premium high-ticket studio vibe",
+  },
 ];
 
 export default function Comparison() {
@@ -17,8 +42,14 @@ export default function Comparison() {
     <div className="comparison-section">
       {/* Header Layout */}
       <div className="comparison-header">
-        <h2>Stop Collecting Raw Data. <br />Start Extracting Creative Direction</h2>
-        <p>Generic forms collect raw data. Briefora extracts actionable creative direction. See the difference.</p>
+        <h2>
+          Stop Collecting Raw Data. <br />
+          Start Extracting Creative Direction
+        </h2>
+        <p>
+          Generic forms collect raw data. Briefora extracts actionable creative
+          direction. See the difference.
+        </p>
       </div>
 
       {/* Comparison Grid Table Wrapper */}
@@ -29,9 +60,15 @@ export default function Comparison() {
               <th className="col-others">Others</th>
               <th className="col-briefora">
                 <div className="brand-header-cell">
-                  <svg className="brand-icon" viewBox="0 0 24 24" fill="currentColor">
+                  {/* <svg className="brand-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6h-4v2h4v2h-4v2h4v2H9V7h6v2z"/>
-                  </svg>
+                  </svg> */}
+                  <img
+                    src={BLogo}
+                    width={20}
+                    alt="Breifora Logo"
+                    // className="brand-icon"
+                  />
                   <span>Briefora</span>
                 </div>
               </th>

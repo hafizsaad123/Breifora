@@ -81,6 +81,9 @@
 /* Popular Middle Card Variant Frame */
 .pricing-card.popular {
   z-index: 1;
+  /* background-color: aqua; */
+  background-color: #f8f7ff;
+
 }
 
 .popular-badge {
