@@ -8,8 +8,8 @@
   border-left: 3px solid #EBEBEB;
   border-bottom: 3px solid #EBEBEB;
   /* border-radius: 40px; */
-  border-radius-top-left: 40px;
-  border-radius-top-right: 40px;
+  border-radius-top-left: 40px !important;
+  border-radius-top-right: 40px !important;
 }
 .dashboard-preview img{
   width: 100%;

@@ -14,7 +14,7 @@ export default function Slider() {
   return (
     <div className="briefora-container">
       {/* Top Ticker Bar */}
-      <div className="logo-ticker">
+      {/* <div className="logo-ticker">
         {Logos.map((logo) => (
           <div key={logo.id} className="logo-item">
             <svg viewBox="0 0 30 30" width="24" height="24" fill={logo.color}>
@@ -23,7 +23,7 @@ export default function Slider() {
             <span className="logo-text">Logoipsum</span>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* Main Content Area */}
       <div className="hero-content">

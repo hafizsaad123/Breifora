@@ -6,7 +6,7 @@ import "./index.css";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Breifora"> 
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>

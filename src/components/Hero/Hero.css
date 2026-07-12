@@ -29,19 +29,19 @@
   position: absolute;
   inset: 0;
   z-index: 1; /* Isko image ke upar layer karne ke liye */
-  
+
   /* Top (0%) ko transparent rakha taaki image saaf dikhe.
     Middle (45%) se color shuru hoga aur bottom (100%) tak pure white (#ffffff) ho jayega.
   */
-  background:linear-gradient(
-    180deg, 
-    rgba(255, 255, 255, 0) -109%, 
-    rgba(217, 240, 251, 0.5) 45%, 
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) -109%,
+    rgba(217, 240, 251, 0.5) 45%,
     #ffffff 100%
   );
-  
+
   /* Agar aapko text/content upar dikhana hai to yeh line zaroori hai */
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 /* Hero ke andar jo bhi text ya buttons hain unko gradient ke upar lane ke liye */
@@ -149,4 +149,11 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   margin: 0;
+}
+
+@media (max-width: 900px) {
+  .hero__copy {
+    text-align: left;
+    align-items: start;
+  }
 }

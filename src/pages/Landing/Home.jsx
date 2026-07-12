@@ -19,7 +19,6 @@ export default function Home() {
       <Pricing />
       <FAQ />
       <BrieforaCTA />
-      {/* Benefits, How It Works, Pricing, Testimonials, FAQs sections go here */}
     </div>
   );
 }
