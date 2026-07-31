@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
-import { bentoFeatures } from '../data';
+import { bentoFeatures } from '../../data';
 import { ShieldCheck, UserMinus, ToggleLeft, HelpCircle } from 'lucide-react';
-import { ScrollBlurHeading } from './ScrollBlurHeading';
+import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
 
 export default function BentoGrid() {
   const containerVariants = {
@@ -19,7 +19,7 @@ export default function BentoGrid() {
       opacity: 1, 
       y: 0, 
       transition: { 
-        type: "spring", 
+        type: "spring" as const, 
         stiffness: 90, 
         damping: 18 
       } 

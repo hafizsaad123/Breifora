@@ -45,10 +45,12 @@ export interface FAQItem {
 }
 
 export const logoCloud = [
-  { id: 'logo1', name: 'Logoipsum Alpha', text: 'Logoipsum' },
-  { id: 'logo2', name: 'Logoipsum Beta', text: 'Logoipsum' },
-  { id: 'logo3', name: 'Logoipsum Gamma', text: 'Logoipsum' },
-  { id: 'logo4', name: 'Logoipsum Delta', text: 'Logoipsum' },
+  { id: 'logo1', name: 'Nexus Studio', text: 'Nexus Studio' },
+  { id: 'logo2', name: 'Vanguard Creative', text: 'Vanguard' },
+  { id: 'logo3', name: 'Hyperion Agency', text: 'Hyperion' },
+  { id: 'logo4', name: 'Apex Design Co.', text: 'Apex Design' },
+  { id: 'logo5', name: 'Pulse Interactive', text: 'Pulse Interactive' },
+  { id: 'logo6', name: 'Aether Digital', text: 'Aether Digital' },
 ];
 
 export const bentoFeatures: FeatureItem[] = [

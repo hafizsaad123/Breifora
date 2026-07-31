@@ -1,5 +1,5 @@
 import { Layers, Github, Twitter, Linkedin } from 'lucide-react';
-import Logo from './Logo';
+import Logo from '../ui/Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -20,7 +20,7 @@ export default function Footer() {
           
           {/* Left Column branding */}
           <div className="md:col-span-1 space-y-4">
-         <img src="https://github.com/hafizsaad123/breifora/blob/main/Frame%2025178150.png?raw=true" width="120px"/>
+            <Logo textSize="text-lg" />
             <p className="text-xs text-slate-500 font-semibold tracking-wider">
               From client chaos to <span className="text-brand-primary">creative clarity</span>.
             </p>
@@ -87,7 +87,7 @@ export default function Footer() {
           <span>Breifora © {currentYear}. All rights reserved.</span>
           <div className="flex gap-6">
             <a href="#privacy" className="hover:text-slate-900">Privacy Policy</a>
-            <a href="#security" className="hover:text-slate-900">Security Guard</a>
+            <a href="#security" className="hover:text-slate-900">Security</a>
           </div>
         </div>
       </div>

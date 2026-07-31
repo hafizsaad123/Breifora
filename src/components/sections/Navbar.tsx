@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Logo from './Logo';
-import { PrimaryBrandButton } from './PrimaryBrandButton';
+import Logo from '../ui/Logo';
+import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,13 +51,12 @@ export default function Navbar() {
       >
         <div className="flex justify-between items-center h-12 md:h-14">
           
-          {/* Leftside: Logo branding (matches image_f9bc20.png layout position) */}
+          {/* Leftside: Logo branding */}
           <div 
             className="flex-shrink-0 flex items-center gap-2 cursor-pointer" 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-          <img src="https://github.com/hafizsaad123/breifora/blob/main/Frame%2025178150.png?raw=true" width="120px"/>
-          
+            <Logo textSize="text-lg" />
           </div>
 
           {/* Centerside: Symmetrical Links Grid with dropdown style indicators */}

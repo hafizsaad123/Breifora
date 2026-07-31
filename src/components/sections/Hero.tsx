@@ -1,15 +1,30 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import WorkspaceMockup from './WorkspaceMockup';
-import { PrimaryBrandButton } from './PrimaryBrandButton';
-import { SecondaryWhiteButton } from './SecondaryWhiteButton';
+import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
+import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
+import { getAdminHeroCopy, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
 
 export default function Hero() {
   const navigate = useNavigate();
+  const [heroCopy, setHeroCopy] = useState(getAdminHeroCopy);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setHeroCopy(getAdminHeroCopy());
+    };
+    window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   const introTransition = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 100,
     damping: 20,
     mass: 1,
@@ -28,7 +43,7 @@ export default function Hero() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#EAE8FE] border border-brand-primary/10 text-brand-primary text-xs font-semibold uppercase tracking-wider"
           >
             <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
-            AI Client Discovery for Brand Designers
+            {heroCopy.badge}
           </motion.div>
 
           {/* H1 Headline */}
@@ -38,9 +53,9 @@ export default function Hero() {
             transition={introTransition}
             className="text-4xl sm:text-[60px] font-semibold text-slate-900 tracking-tight leading-[1.08]"
           >
-            Turn Client Chaos Into<br className="hidden sm:inline" />{" "}
+            {heroCopy.title}<br className="hidden sm:inline" />{" "}
             <span className="text-brand-primary">
-              Elite Strategic Blueprints
+              {heroCopy.highlightTitle}
             </span>
           </motion.h1>
 
@@ -51,7 +66,7 @@ export default function Hero() {
             transition={{ ...introTransition, delay: 0.15 }}
             className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed"
           >
-            The zero-login brand alignment engine trusted by premium visual consultants and boutique studios. Capture precise stylistic direction and lock project scope entirely online—no client passwords required.
+            {heroCopy.subtitle}
           </motion.p>
 
           {/* CTAs */}
@@ -65,26 +80,24 @@ export default function Hero() {
               onClick={() => navigate('/signup')}
               className="w-full sm:w-auto gap-2 py-4"
             >
-              Start Free
+              {heroCopy.primaryCta}
               <ArrowRight className="w-5 h-5" />
             </PrimaryBrandButton>
-            <SecondaryWhiteButton
-              onClick={() => {
-                const element = document.getElementById('how-it-works');
-                if (element) element.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="w-full sm:w-auto gap-2 py-4"
-            >
-              <Play className="w-4 h-4 fill-current text-[#5956E9]" />
-              Watch Demo
-            </SecondaryWhiteButton>
+            {Boolean(heroCopy.secondaryCta && heroCopy.secondaryCta.trim()) && (
+              <SecondaryWhiteButton
+                onClick={() => {
+                  const element = document.getElementById('how-it-works');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto gap-2 py-4"
+              >
+                <Play className="w-4 h-4 fill-current text-[#5956E9]" />
+                {heroCopy.secondaryCta}
+              </SecondaryWhiteButton>
+            )}
           </motion.div>
 
 
-
-          <p className="text-[10px] text-slate-400 font-normal uppercase tracking-widest pt-2">
-            NO CREDIT CARD REQUIRED
-          </p>
         </div>
 
         {/* Product Mockup View card container with continuous viewport reveal animation */}
@@ -100,3 +113,4 @@ export default function Hero() {
     </section>
   );
 }
+

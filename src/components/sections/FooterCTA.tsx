@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ScrollBlurHeading } from './ScrollBlurHeading';
-import { SecondaryWhiteButton } from './SecondaryWhiteButton';
+import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
+import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
 
 export default function FooterCTA() {
   const navigate = useNavigate();

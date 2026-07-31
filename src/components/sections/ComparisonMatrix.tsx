@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { Check, X, Layers, AlertCircle } from 'lucide-react';
-import Logo from './Logo';
-import { ScrollBlurHeading } from './ScrollBlurHeading';
+import Logo from '../ui/Logo';
+import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
 
 interface MatrixRow {
   characteristic: string;

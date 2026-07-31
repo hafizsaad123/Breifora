@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
-import { processSteps } from '../data';
+import { processSteps } from '../../data';
 import { Link2, Laptop, FileSignature } from 'lucide-react';
-import { ScrollBlurHeading } from './ScrollBlurHeading';
+import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
 
 export default function ProcessSteps() {
   const containerVariants = {
@@ -19,7 +19,7 @@ export default function ProcessSteps() {
       opacity: 1, 
       y: 0, 
       transition: { 
-        type: "spring", 
+        type: "spring" as const, 
         stiffness: 90, 
         damping: 18 
       } 

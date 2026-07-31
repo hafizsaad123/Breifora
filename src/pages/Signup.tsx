@@ -16,7 +16,7 @@ import {
   Compass, 
   Globe 
 } from 'lucide-react';
-import Logo from './Logo';
+import Logo from '../components/ui/Logo';
 import Dashboard from './Dashboard';
 
 const countriesList = [
@@ -604,16 +604,37 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   }
 
   return (
-    <div className="w-full min-h-screen relative flex items-center justify-center overflow-x-hidden bg-slate-50/50 p-4 font-sans select-none">
+    <div className="w-full min-h-screen relative flex flex-col justify-between items-center overflow-x-hidden bg-[#FFFFFF] p-4 sm:p-6 font-sans select-none antialiased">
       
-      {/* Visual Ambient Decorative Backdrops */}
-      <div className="absolute inset-0 w-full h-full object-cover filter blur-[26px] opacity-45 scale-105 pointer-events-none select-none bg-gradient-to-tr from-slate-200 via-indigo-50 to-purple-100" />
+      {/* Background Radial Light Accent matching Landing.tsx */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-10%,rgba(37,22,255,0.07),rgba(255,255,255,0))] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-[32px] p-8 md:p-10 flex flex-col shadow-xl">
-        
-        <div className="flex flex-col items-center mb-5 cursor-pointer" onClick={() => navigate('/')}>
-          <Logo iconOnly={true} iconSize={48} />
+      {/* Top Header Navigation Bar */}
+      <div className="relative z-20 w-full max-w-5xl flex items-center justify-between py-4 px-2">
+        <button
+          onClick={() => navigate('/')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200/80 bg-white/80 backdrop-blur-xs text-slate-700 hover:text-slate-900 hover:border-slate-300 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          <span>Back to Home</span>
+        </button>
+
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <Logo iconSize={32} />
         </div>
+
+        <div className="text-xs font-medium text-slate-500 hidden sm:block">
+          {authMode === 'onboarding' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold">
+              Step {onboardingStep === 'loading' ? 3 : onboardingStep} of 3
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Main Form Container Card */}
+      <div className="relative z-10 w-full max-w-[440px] my-auto py-4">
+        <div className="w-full bg-white border border-slate-200/80 rounded-[28px] md:rounded-[32px] p-7 sm:p-9 flex flex-col shadow-xl shadow-slate-200/40 relative">
 
         <AnimatePresence mode="wait">
           
@@ -629,10 +650,15 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
             >
               {onboardingStep !== 'loading' && (
                 <>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight text-center leading-tight">
+                  <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/80 text-slate-800 text-[10px] font-bold tracking-wide uppercase mb-3 bg-slate-50/80 mx-auto">
+                    <Compass className="w-3.5 h-3.5 text-[#2516FF]" />
+                    <span>Workspace Onboarding</span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">
                     Set up your workspace
                   </h2>
-                  <p className="text-[11px] font-semibold text-slate-400 mt-1 text-center mb-6">
+                  <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">
                     Customize Briefora to fit your agency's design intake goals.
                   </p>
 
@@ -641,19 +667,19 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     {[1, 2, 3].map((step) => (
                       <React.Fragment key={step}>
                         <div className="flex items-center justify-center">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold transition-all duration-300 ${
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                             onboardingStep === step 
-                              ? 'bg-[#5956E9] text-white ring-4 ring-[#5956E9]/15' 
+                              ? 'bg-[#2516FF] text-white ring-4 ring-[#2516FF]/15 shadow-sm shadow-[#2516FF]/30' 
                               : onboardingStep > step 
                                 ? 'bg-emerald-500 text-white' 
                                 : 'bg-slate-100 text-slate-400'
                           }`}>
-                            {onboardingStep > step ? <Check className="w-3.5 h-3.5" /> : step}
+                            {onboardingStep > step ? <Check className="w-4 h-4" /> : step}
                           </div>
                         </div>
                         {step < 3 && (
                           <div className="flex-1 h-0.5 mx-2 bg-slate-100 relative">
-                            <div className="absolute top-0 bottom-0 left-0 bg-[#5956E9] transition-all duration-300" style={{ width: onboardingStep > step ? '100%' : '0%' }} />
+                            <div className="absolute top-0 bottom-0 left-0 bg-[#2516FF] transition-all duration-300" style={{ width: onboardingStep > step ? '100%' : '0%' }} />
                           </div>
                         )}
                       </React.Fragment>
@@ -665,31 +691,31 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               {/* Step 1: User details & profile avatar selection */}
               {onboardingStep === 1 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">First name</label>
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">First name</label>
                       <input 
                         type="text" 
                         value={confirmFirstName} 
                         onChange={(e) => setConfirmFirstName(e.target.value)}
                         placeholder="Jane" 
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                        className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Last name</label>
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Last name</label>
                       <input 
                         type="text" 
                         value={confirmLastName} 
                         onChange={(e) => setConfirmLastName(e.target.value)}
                         placeholder="Doe" 
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                        className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">Choose professional avatar</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-1">Choose profile avatar</label>
                     <div className="grid grid-cols-4 gap-2.5 mt-1">
                       {[
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
@@ -702,13 +728,13 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                           type="button"
                           onClick={() => setSelectedAvatar(imgUrl)}
                           className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all p-0.5 cursor-pointer bg-white ${
-                            selectedAvatar === imgUrl ? 'border-[#5956E9] ring-2 ring-[#5956E9]/15' : 'border-slate-100 hover:border-slate-200'
+                            selectedAvatar === imgUrl ? 'border-[#2516FF] ring-2 ring-[#2516FF]/15' : 'border-slate-100 hover:border-slate-200'
                           }`}
                         >
                           <img src={imgUrl} className="w-full h-full object-cover rounded-[10px]" alt="Avatar option" />
                           {selectedAvatar === imgUrl && (
-                            <div className="absolute inset-0 bg-[#5956E9]/20 flex items-center justify-center">
-                              <div className="w-4 h-4 rounded-full bg-[#5956E9] flex items-center justify-center text-white">
+                            <div className="absolute inset-0 bg-[#2516FF]/20 flex items-center justify-center">
+                              <div className="w-4 h-4 rounded-full bg-[#2516FF] flex items-center justify-center text-white">
                                 <Check className="w-2.5 h-2.5" />
                               </div>
                             </div>
@@ -719,7 +745,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">Select your primary role</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">Select your primary role</label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { title: 'Strategist', desc: 'Brand planner', value: 'Brand Strategist' },
@@ -733,12 +759,12 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                           onClick={() => setUserRole(item.value)}
                           className={`text-left p-3 rounded-2xl border-2 transition-all cursor-pointer bg-white ${
                             userRole === item.value 
-                              ? 'border-[#5956E9] bg-[#5956E9]/5 ring-2 ring-[#5956E9]/10' 
+                              ? 'border-[#2516FF] bg-[#2516FF]/5 ring-2 ring-[#2516FF]/10' 
                               : 'border-slate-100 hover:border-slate-200'
                           }`}
                         >
-                          <p className="text-xs font-black text-slate-900 leading-none">{item.title}</p>
-                          <p className="text-[9px] text-slate-450 mt-1 leading-normal font-medium">{item.desc}</p>
+                          <p className="text-xs font-bold text-slate-900 leading-none">{item.title}</p>
+                          <p className="text-[10px] text-slate-500 mt-1 leading-normal font-normal">{item.desc}</p>
                         </button>
                       ))}
                     </div>
@@ -750,20 +776,20 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               {onboardingStep === 2 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Creative Workspace Name</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Creative Workspace Name</label>
                     <input 
                       type="text" 
                       value={workspaceName} 
                       onChange={(e) => setWorkspaceName(e.target.value)}
                       placeholder="My Strategy Hub" 
                       required
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-semibold" 
+                      className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-semibold transition-all" 
                     />
                     <p className="text-[10px] text-slate-400 mt-1 font-medium">This name is used to personalize your team dashboard.</p>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-2">Industry Focus</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">Industry Focus</label>
                     <div className="space-y-1.5">
                       {[
                         'B2B Branding & Identity',
@@ -775,15 +801,15 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                           key={focusItem}
                           type="button"
                           onClick={() => setIndustryFocus(focusItem)}
-                          className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all flex items-center justify-between cursor-pointer bg-white ${
+                          className={`w-full text-left px-3.5 py-2.5 rounded-xl border-2 transition-all flex items-center justify-between cursor-pointer bg-white ${
                             industryFocus === focusItem 
-                              ? 'border-[#5956E9] bg-[#5956E9]/5' 
+                              ? 'border-[#2516FF] bg-[#2516FF]/5' 
                               : 'border-slate-100 hover:border-slate-200'
                           }`}
                         >
                           <span className="text-xs font-bold text-slate-800">{focusItem}</span>
                           {industryFocus === focusItem && (
-                            <Check className="w-4 h-4 text-[#5956E9]" />
+                            <Check className="w-4 h-4 text-[#2516FF]" />
                           )}
                         </button>
                       ))}
@@ -795,7 +821,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               {/* Step 3: Goals selection */}
               {onboardingStep === 3 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">Which goals are your highest priority? (Select all)</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">Which goals are your highest priority? (Select all)</label>
                   <div className="space-y-2">
                     {[
                       'Auto-generating detailed client briefs',
@@ -809,20 +835,20 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                           key={pGoal}
                           type="button"
                           onClick={() => handlePriorityToggle(pGoal)}
-                          className={`w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-start gap-3 cursor-pointer bg-white ${
+                          className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 cursor-pointer bg-white ${
                             isSelected 
-                              ? 'border-[#5956E9] bg-[#5956E9]/5' 
+                              ? 'border-[#2516FF] bg-[#2516FF]/5' 
                               : 'border-slate-100 hover:border-slate-200'
                           }`}
                         >
-                          <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border ${
-                            isSelected ? 'bg-[#5956E9] border-[#5956E9]' : 'border-slate-300'
+                          <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border transition-all ${
+                            isSelected ? 'bg-[#2516FF] border-[#2516FF]' : 'border-slate-300'
                           }`}>
                             {isSelected && <Check className="w-3 h-3 text-white" />}
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-800 leading-none">{pGoal}</p>
-                            <p className="text-[9px] text-slate-400 mt-1 leading-tight font-medium">
+                            <p className="text-[10px] text-slate-500 mt-1 leading-tight font-normal">
                               {pGoal === 'Auto-generating detailed client briefs' && 'Instantly map design inputs into clean briefing decks.'}
                               {pGoal === 'Real-time client questionnaires' && 'Send links to intake assets, briefs and strategic details.'}
                               {pGoal === 'Exporting brand design specifications' && 'Generate structured branding requirements for handoff.'}
@@ -844,26 +870,26 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   className="flex flex-col items-center justify-center py-10"
                 >
                   <div className="relative w-16 h-16 flex items-center justify-center">
-                    <svg className="animate-spin w-12 h-12 text-[#5956E9]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-12 h-12 text-[#2516FF]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <div className="absolute text-[#5956E9]">
+                    <div className="absolute text-[#2516FF]">
                       <Sparkles className="w-4 h-4 animate-bounce" />
                     </div>
                   </div>
                   
-                  <p className="text-sm font-black text-slate-850 mt-6 tracking-tight text-center">
+                  <p className="text-sm font-bold text-slate-900 mt-6 tracking-tight text-center">
                     Personalizing your creative workspace...
                   </p>
                   
                   {/* Dynamic loader status */}
-                  <p className="text-[11px] font-bold text-slate-450 mt-1 text-center min-h-[16px]">
+                  <p className="text-xs font-medium text-slate-500 mt-1 text-center min-h-[16px]">
                     {onboardingStatusText}
                   </p>
 
                   <div className="w-full bg-slate-100 h-1.5 rounded-full mt-6 max-w-xs overflow-hidden">
-                    <div className="bg-[#5956E9] h-full transition-all duration-300" style={{ width: `${onboardingProgress}%` }} />
+                    <div className="bg-[#2516FF] h-full transition-all duration-300" style={{ width: `${onboardingProgress}%` }} />
                   </div>
                 </motion.div>
               )}
@@ -882,7 +908,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     <button
                       type="button"
                       onClick={() => setOnboardingStep((prev: any) => prev - 1)}
-                      className="px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer border-none"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-700 font-bold text-xs transition-all flex items-center gap-1 cursor-pointer border-none"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" /> Back
                     </button>
@@ -893,7 +919,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   <button
                     type="button"
                     onClick={nextOnboardingStep}
-                    className="px-6 py-3 bg-[#5956E9] text-white font-bold text-xs rounded-full shadow-[0_4px_12px_rgba(89,86,233,0.3)] hover:shadow-lg transition-all flex items-center gap-1 cursor-pointer border-none ml-auto"
+                    className="px-6 py-2.5 bg-[#2516FF] text-white font-bold text-xs rounded-full shadow-[0_4px_14px_rgba(37,22,255,0.3)] hover:bg-[#1f10e6] hover:shadow-[0_6px_20px_rgba(37,22,255,0.4)] transition-all flex items-center gap-1 cursor-pointer border-none ml-auto"
                   >
                     {onboardingStep === 3 ? 'Launch Workspace' : 'Continue'} 
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -911,9 +937,15 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
               transition={{ duration: 0.2 }}
+              className="flex flex-col"
             >
-              <h2 className="text-xl font-black text-slate-900 tracking-tight text-center leading-tight">Create an account</h2>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1 text-center mb-5">Get started with Briefora and organize your workspace today.</p>
+              <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/80 text-slate-800 text-[10px] font-bold tracking-wide uppercase mb-3 bg-slate-50/80 mx-auto">
+                <Sparkles className="w-3.5 h-3.5 text-[#2516FF]" />
+                <span>Get Started Free</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">Create an account</h2>
+              <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">Get started with Briefora and organize your workspace today.</p>
               
               {errorMessage && (
                 <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-rose-600 mb-4 animate-fade-in">
@@ -930,68 +962,68 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               )}
 
               <form onSubmit={handleSignUp} className="space-y-3.5">
-                <div className="grid grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">First name</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">First name</label>
                     <input 
                       type="text" 
                       placeholder="Jane" 
                       required 
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                      className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Last name</label>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Last name</label>
                     <input 
                       type="text" 
                       placeholder="Doe" 
                       required 
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                      className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Work email</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Work email</label>
                   <input 
                     type="email" 
                     placeholder="name@demo.com" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Password</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Password</label>
                   <input 
                     type="password" 
                     placeholder="••••••••" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Country</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Country</label>
                   <div className="relative mt-1">
                     <select 
                       value={selectedCountry} 
                       onChange={(e) => setSelectedCountry(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] cursor-pointer appearance-none font-medium"
+                      className="w-full bg-white border border-slate-200/90 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] cursor-pointer appearance-none font-medium transition-all"
                     >
                       {countriesList.map((c) => (
                         <option key={c.code} value={c.code} className="text-slate-900 font-medium">{c.code} - {c.name}</option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-slate-400">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                   </div>
@@ -1004,26 +1036,22 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     id="terms" 
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="mt-0.5 accent-[#5956E9] rounded cursor-pointer" 
+                    className="mt-0.5 accent-[#2516FF] rounded cursor-pointer" 
                   />
-                  <label htmlFor="terms" className="text-[10px] text-slate-400 leading-normal cursor-pointer">
-                    I have read and agree to abide by the <span className="text-[#5956E9] font-semibold hover:underline">Usage Policy</span>, <span className="text-[#5956E9] font-semibold hover:underline">Privacy Policy</span> and <span className="text-[#5956E9] font-semibold hover:underline">Terms of Use</span>.
+                  <label htmlFor="terms" className="text-[10px] text-slate-500 leading-normal cursor-pointer">
+                    I have read and agree to abide by the <span className="text-[#2516FF] font-semibold hover:underline">Usage Policy</span>, <span className="text-[#2516FF] font-semibold hover:underline">Privacy Policy</span> and <span className="text-[#2516FF] font-semibold hover:underline">Terms of Use</span>.
                   </label>
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#5956E9] text-white font-bold text-xs shadow-[0_4px_14px_rgba(89,86,233,0.35)] mt-2 cursor-pointer border-none">
+                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs shadow-[0_4px_14px_rgba(37,22,255,0.3)] hover:bg-[#1f10e6] hover:shadow-[0_6px_20px_rgba(37,22,255,0.4)] mt-2 cursor-pointer border-none transition-all">
                   Sign up
                 </motion.button>
               </form>
 
-              <motion.button onClick={() => setShowGooglePopup(true)} whileHover={{ backgroundColor: "#f8fafc" }} whileTap={{ scale: 0.985 }} className="w-full py-3 bg-white border border-slate-200 rounded-full text-slate-700 font-bold text-xs shadow-sm flex items-center justify-center gap-2 mt-3 cursor-pointer">
+              <motion.button onClick={() => setShowGooglePopup(true)} whileHover={{ backgroundColor: "#f8fafc" }} whileTap={{ scale: 0.985 }} className="w-full py-3 bg-white border border-slate-200/90 hover:border-slate-300 rounded-full text-slate-700 font-bold text-xs shadow-xs flex items-center justify-center gap-2 mt-3 cursor-pointer transition-all">
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.78 5.78 0 0 1 8.2 12.729a5.78 5.78 0 0 1 5.79-5.786c1.47 0 2.809.536 3.854 1.414L21 4.543A10.16 10.16 0 0 0 13.99 1.73a10.11 10.11 0 0 0-10.11 10.111 10.11 10.11 0 0 0 10.11 10.114c5.38 0 9.77-4.135 9.77-10.114a11.1 11.1 0 0 0-.15-1.555H12.24Z"/></svg>
                 Sign in with Google
               </motion.button>
-
-              <p className="text-[11px] text-slate-400 mt-5 text-center font-semibold">
-                Already have an account? <button onClick={() => navigate('/login')} className="text-[#5956E9] font-bold hover:underline cursor-pointer bg-transparent border-none p-0 ml-1 text-[11px]">Log In</button>
-              </p>
             </motion.div>
           )}
 
@@ -1035,9 +1063,15 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
               transition={{ duration: 0.2 }}
+              className="flex flex-col"
             >
-              <h2 className="text-xl font-black text-slate-900 tracking-tight text-center leading-tight">Welcome Back to Briefora</h2>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1 text-center mb-5">Sign in to access your strategic brief generation deck.</p>
+              <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/80 text-slate-800 text-[10px] font-bold tracking-wide uppercase mb-3 bg-slate-50/80 mx-auto">
+                <Lock className="w-3.5 h-3.5 text-[#2516FF]" />
+                <span>Welcome Back</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">Welcome to Briefora</h2>
+              <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">Sign in to access your strategic brief generation deck.</p>
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-rose-600 mb-4 animate-fade-in">
@@ -1055,21 +1089,21 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Work email</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Work email</label>
                   <input 
                     type="email" 
                     placeholder="name@demo.com" 
                     required 
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Password</label>
-                    <button type="button" onClick={() => navigate('/forgotpassword')} className="text-[11px] font-bold text-[#5956E9] hover:underline cursor-pointer bg-transparent border-none p-0">Forgot password?</button>
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Password</label>
+                    <button type="button" onClick={() => navigate('/forgotpassword')} className="text-xs font-semibold text-[#2516FF] hover:underline cursor-pointer bg-transparent border-none p-0">Forgot password?</button>
                   </div>
                   <input 
                     type="password" 
@@ -1077,41 +1111,19 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     required 
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
-                {/* Highly user-friendly Quick Testing Helper button */}
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex flex-col gap-1 select-none">
-                  <div className="flex items-center gap-1.5 text-[#5956E9]">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <p className="text-[10px] font-extrabold uppercase tracking-wide">Testing Preview Hack</p>
-                  </div>
-                  <p className="text-[9.5px] text-slate-500 font-medium leading-normal">
-                    Don't want to register a new account? Tap below to auto-fill the preset demo login credentials:
-                  </p>
-                  <button 
-                    type="button" 
-                    onClick={autofillDemoUser}
-                    className="w-full mt-1.5 py-2 bg-[#5956E9]/10 text-[#5956E9] text-[10px] font-extrabold hover:bg-[#5956E9]/15 active:scale-98 transition-all rounded-xl border-none cursor-pointer"
-                  >
-                    Quick Fill Demo Login
-                  </button>
-                </div>
-
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#5956E9] text-white font-bold text-xs shadow-[0_4px_14px_rgba(89,86,233,0.35)] mt-4 cursor-pointer border-none">
+                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs shadow-[0_4px_14px_rgba(37,22,255,0.3)] hover:bg-[#1f10e6] hover:shadow-[0_6px_20px_rgba(37,22,255,0.4)] mt-4 cursor-pointer border-none transition-all">
                   Log in
                 </motion.button>
               </form>
 
-              <motion.button onClick={() => setShowGooglePopup(true)} whileHover={{ backgroundColor: "#f8fafc" }} whileTap={{ scale: 0.985 }} className="w-full py-3 bg-white border border-slate-200 rounded-full text-slate-700 font-bold text-xs shadow-sm flex items-center justify-center gap-2 mt-3 cursor-pointer">
+              <motion.button onClick={() => setShowGooglePopup(true)} whileHover={{ backgroundColor: "#f8fafc" }} whileTap={{ scale: 0.985 }} className="w-full py-3 bg-white border border-slate-200/90 hover:border-slate-300 rounded-full text-slate-700 font-bold text-xs shadow-xs flex items-center justify-center gap-2 mt-3 cursor-pointer transition-all">
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.78 5.78 0 0 1 8.2 12.729a5.78 5.78 0 0 1 5.79-5.786c1.47 0 2.809.536 3.854 1.414L21 4.543A10.16 10.16 0 0 0 13.99 1.73a10.11 10.11 0 0 0-10.11 10.111 10.11 10.11 0 0 0 10.11 10.114c5.38 0 9.77-4.135 9.77-10.114a11.1 11.1 0 0 0-.15-1.555H12.24Z"/></svg>
                 Sign in with Google
               </motion.button>
-
-              <p className="text-[11px] text-slate-400 mt-5 text-center font-semibold">
-                Don't have an account? <button onClick={() => navigate('/signup')} className="text-[#5956E9] font-bold hover:underline cursor-pointer bg-transparent border-none p-0 ml-1 text-[11px]">Sign up</button>
-              </p>
             </motion.div>
           )}
 
@@ -1123,31 +1135,33 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
               transition={{ duration: 0.2 }}
+              className="flex flex-col"
             >
-              <h2 className="text-xl font-black text-slate-900 tracking-tight text-center leading-tight">Reset Your Password</h2>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1 text-center mb-5">Enter your email address to receive a secure recovery link in your inbox.</p>
+              <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/80 text-slate-800 text-[10px] font-bold tracking-wide uppercase mb-3 bg-slate-50/80 mx-auto">
+                <Mail className="w-3.5 h-3.5 text-[#2516FF]" />
+                <span>Account Recovery</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">Reset Your Password</h2>
+              <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">Enter your email address to receive a secure recovery link in your inbox.</p>
 
               <form onSubmit={(e) => { e.preventDefault(); navigate('/resetpassword'); }} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Work email</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Work email</label>
                   <input 
                     type="email" 
                     placeholder="name@demo.com" 
                     required 
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#5956E9] text-white font-bold text-xs shadow-[0_4px_14px_rgba(89,86,233,0.35)] mt-4 cursor-pointer border-none">
+                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs shadow-[0_4px_14px_rgba(37,22,255,0.3)] hover:bg-[#1f10e6] hover:shadow-[0_6px_20px_rgba(37,22,255,0.4)] mt-4 cursor-pointer border-none transition-all">
                   Send Link
                 </motion.button>
               </form>
-
-              <p className="text-[11px] text-slate-400 mt-5 text-center font-semibold">
-                <button onClick={() => navigate('/login')} className="text-[#5956E9] font-bold hover:underline cursor-pointer bg-transparent border-none p-0 text-[11px]">Back to Login</button>
-              </p>
             </motion.div>
           )}
 
@@ -1159,9 +1173,15 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
               transition={{ duration: 0.2 }}
+              className="flex flex-col"
             >
-              <h2 className="text-xl font-black text-slate-900 tracking-tight text-center leading-tight">Update your password</h2>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1 text-center mb-5">Enter and confirm your new password below to secure your workspace account.</p>
+              <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-slate-200/80 text-slate-800 text-[10px] font-bold tracking-wide uppercase mb-3 bg-slate-50/80 mx-auto">
+                <Lock className="w-3.5 h-3.5 text-[#2516FF]" />
+                <span>Security Update</span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">Update your password</h2>
+              <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">Enter and confirm your new password below to secure your workspace account.</p>
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-rose-600 mb-4">
@@ -1188,39 +1208,47 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                 }, 800);
               }} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">New password</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">New password</label>
                   <input 
                     type="password" 
                     placeholder="••••••••" 
                     required 
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Confirm password</label>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Confirm password</label>
                   <input 
                     type="password" 
                     placeholder="••••••••" 
                     required 
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] font-medium" 
+                    className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-medium transition-all" 
                   />
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#5956E9] text-white font-bold text-xs shadow-[0_4px_14px_rgba(89,86,233,0.35)] mt-4 cursor-pointer border-none">
+                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs shadow-[0_4px_14px_rgba(37,22,255,0.3)] hover:bg-[#1f10e6] hover:shadow-[0_6px_20px_rgba(37,22,255,0.4)] mt-4 cursor-pointer border-none transition-all">
                   Update password
                 </motion.button>
               </form>
 
-              <p className="text-[11px] text-slate-400 mt-5 text-center font-semibold">
-                <button onClick={() => navigate('/forgotpassword')} className="text-[#5956E9] font-bold hover:underline cursor-pointer bg-transparent border-none p-0 text-[11px]">Back</button>
+              <p className="text-xs text-slate-500 mt-5 text-center font-normal">
+                <button onClick={() => navigate('/forgotpassword')} className="text-[#2516FF] font-bold hover:underline cursor-pointer bg-transparent border-none p-0 text-xs">Back</button>
               </p>
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Footer copyright note */}
+      <div className="relative z-20 py-3 text-center">
+        <p className="text-[11px] text-slate-400 font-normal">
+          © {new Date().getFullYear()} Briefora Inc. All rights reserved. Secure Workspace Gateway.
+        </p>
       </div>
 
       {/* 🔮 INTERACTIVE HIGH-FIDELITY GOOGLE OAUTH POPUP SIMULATION MODAL */}
@@ -1244,7 +1272,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="fixed z-55 w-full max-w-[380px] bg-white rounded-2xl border border-slate-200 p-6 flex flex-col shadow-2xl select-none"
+              className="fixed z-55 w-full max-w-[380px] bg-white rounded-3xl border border-slate-200/90 p-6 flex flex-col shadow-2xl select-none"
             >
               {googleStep === 'choose' && (
                 <>
@@ -1256,11 +1284,11 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" />
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">Secure Auth</span>
+                    <span className="text-[10px] font-bold text-[#2516FF] uppercase tracking-widest bg-[#2516FF]/5 border border-[#2516FF]/10 px-2 py-0.5 rounded-full">Secure Auth</span>
                   </div>
 
-                  <h3 className="text-base font-black text-slate-900 leading-tight">Sign in with Google</h3>
-                  <p className="text-[11px] text-slate-400 mt-1 font-medium mb-4">Choose an active account to link with Briefora Workspace.</p>
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">Sign in with Google</h3>
+                  <p className="text-xs text-slate-500 mt-1 font-normal mb-4">Choose an active account to link with Briefora Workspace.</p>
 
                   <div className="space-y-1.5 max-h-[220px] overflow-y-auto no-scrollbar">
                     {[
@@ -1290,7 +1318,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                         key={gUser.email}
                         type="button"
                         onClick={() => handleGoogleAccountSelect(gUser.email, gUser.firstName, gUser.lastName, gUser.avatar)}
-                        className="w-full flex items-center justify-between p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-left cursor-pointer bg-white"
+                        className="w-full flex items-center justify-between p-3 border border-slate-100 hover:border-slate-200 hover:bg-slate-50/80 rounded-xl transition-all text-left cursor-pointer bg-white"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <img src={gUser.avatar} alt={gUser.firstName} className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-100" />
@@ -1299,7 +1327,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                             <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">{gUser.email}</p>
                           </div>
                         </div>
-                        <span className="text-[9px] font-extrabold text-[#5956E9] bg-[#5956E9]/5 px-2 py-1 rounded-lg shrink-0">{gUser.desc}</span>
+                        <span className="text-[9px] font-bold text-[#2516FF] bg-[#2516FF]/5 px-2 py-1 rounded-lg shrink-0">{gUser.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -1309,7 +1337,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     <button 
                       type="button"
                       onClick={() => setShowGooglePopup(false)}
-                      className="text-slate-500 hover:text-slate-800 text-[11px] font-bold cursor-pointer bg-transparent border-none p-0"
+                      className="text-slate-500 hover:text-slate-800 text-xs font-bold cursor-pointer bg-transparent border-none p-0"
                     >
                       Cancel
                     </button>
@@ -1321,20 +1349,20 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                 <div className="flex flex-col items-center justify-center py-6 text-center">
                   {googleLoadingState === 'loading' ? (
                     <>
-                      <svg className="animate-spin w-10 h-10 text-slate-800 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin w-10 h-10 text-[#2516FF] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <h4 className="text-sm font-black text-slate-900 leading-tight">Connecting with Google...</h4>
-                      <p className="text-[11px] text-slate-450 mt-1 font-medium">Securely sharing credentials with {selectedGoogleEmail}</p>
+                      <h4 className="text-sm font-bold text-slate-900 leading-tight">Connecting with Google...</h4>
+                      <p className="text-xs text-slate-500 mt-1 font-normal">Securely sharing credentials with {selectedGoogleEmail}</p>
                     </>
                   ) : (
                     <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center">
                       <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4">
                         <Check className="w-5 h-5" />
                       </div>
-                      <h4 className="text-sm font-black text-slate-900 leading-tight">Identity Verified!</h4>
-                      <p className="text-[11px] text-slate-450 mt-1 font-medium">Launching workspace deck...</p>
+                      <h4 className="text-sm font-bold text-slate-900 leading-tight">Identity Verified!</h4>
+                      <p className="text-xs text-slate-500 mt-1 font-normal">Launching workspace deck...</p>
                     </motion.div>
                   )}
                 </div>

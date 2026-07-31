@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Check, HelpCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { pricingPlans } from '../data';
-import { ScrollBlurHeading } from './ScrollBlurHeading';
-import { PrimaryBrandButton } from './PrimaryBrandButton';
-import { SecondaryWhiteButton } from './SecondaryWhiteButton';
+import { getAdminPricing, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
+import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
+import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
+import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
 
 interface AnimatedPriceTextProps {
   value: string | number;
@@ -27,16 +27,24 @@ export function AnimatedPriceText({ value, isFree }: AnimatedPriceTextProps) {
 }
 
 export default function Pricing() {
+  const [plans, setPlans] = useState(getAdminPricing);
   const [isAnnual, setIsAnnual] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const handleUpdate = () => {
+      setPlans(getAdminPricing());
+    };
+    window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
   const handleCTA = (planId: string) => {
-    if (planId === 'plan-free') {
-      navigate('/signup');
-    } else {
-      console.log(`Premium tier selected: ${planId}`);
-      navigate('/signup');
-    }
+    navigate('/signup');
   };
 
   return (
@@ -84,7 +92,7 @@ export default function Pricing() {
 
         {/* Pricing Cards Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-          {pricingPlans.map((plan) => {
+          {plans.map((plan: any) => {
             const isPro = plan.popular;
             const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
 
@@ -99,18 +107,15 @@ export default function Pricing() {
                 id={`pricing-card-${plan.id}`}
                 className={`rounded-2xl flex flex-col justify-between p-8 border transition-all duration-300 relative ${
                   isPro
-                    ? 'border-brand-primary bg-white ring-4 ring-brand-primary/5 pt-10 md:scale-105'
+                    ? 'border-brand-primary bg-white ring-4 ring-brand-primary/5 pt-10 md:scale-105 shadow-xl shadow-brand-primary/5'
                     : 'border-slate-100 bg-slate-50/50 hover:bg-white text-slate-800'
                 }`}
               >
                 {/* Isolated Highlights for the Pro Plan */}
                 {isPro && (
-                  <>
-                    {/* Popular Distinctive Badge centered on top border */}
-                    <span className="absolute -top-[14px] left-1/2 -translate-x-1/2 px-5 py-1 rounded-full bg-brand-primary text-white text-[11px] font-semibold tracking-wide whitespace-nowrap z-10 shadow-sm">
-                      Most popular
-                    </span>
-                  </>
+                  <span className="absolute -top-[14px] left-1/2 -translate-x-1/2 px-5 py-1 rounded-full bg-brand-primary text-white text-[11px] font-semibold tracking-wide whitespace-nowrap z-10 shadow-sm">
+                    Most popular
+                  </span>
                 )}
 
                 {/* Plan Header */}
@@ -140,53 +145,37 @@ export default function Pricing() {
                       value={price}
                       isFree={plan.id === 'plan-free'}
                     />
-                    {isAnnual && plan.id !== 'plan-free' && (
-                      <span className="text-[10px] font-semibold text-emerald-600 block mt-1 uppercase">
-                        Billed annually (${price * 12}/yr)
-                      </span>
-                    )}
+                  </div>
+
+                  {/* Feature Checkmarks */}
+                  <div className="space-y-3 pt-2">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Included capabilities:</p>
+                    {plan.features?.map((feature: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
+                        <Check className="w-4 h-4 text-brand-primary shrink-0 mt-0.5" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Features List Section */}
-                <div className="border-t border-slate-100 my-6 pt-6 flex-1 space-y-4">
-                  <span className="text-[10px] font-semibold text-slate-400 block uppercase tracking-widest">
-                    Key Features Included:
-                  </span>
-                  <ul className="space-y-3.5">
-                    {plan.features.map((feat, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-xs text-slate-700 leading-tight">
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          isPro ? 'bg-brand-primary/10 text-brand-primary' : 'bg-slate-200/50 text-slate-500'
-                        }`}>
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </div>
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Action Call to Action Button */}
-                <div className="pt-2">
+                {/* Plan Action CTA */}
+                <div className="pt-8 mt-auto">
                   {isPro ? (
-                    <PrimaryBrandButton 
-                      className="w-full text-xs uppercase tracking-wider py-3.5"
+                    <PrimaryBrandButton
                       onClick={() => handleCTA(plan.id)}
+                      className="w-full justify-center"
                     >
-                      {plan.ctaText}
+                      {plan.buttonText || plan.ctaText || 'Upgrade to Pro'}
                     </PrimaryBrandButton>
                   ) : (
                     <SecondaryWhiteButton
-                      className="w-full text-xs uppercase tracking-wider py-3.5"
                       onClick={() => handleCTA(plan.id)}
+                      className="w-full justify-center"
                     >
-                      {plan.ctaText}
+                      {plan.buttonText || plan.ctaText || 'Get Started'}
                     </SecondaryWhiteButton>
                   )}
-                  <p className="text-[10px] text-center text-slate-400 mt-2.5">
-                    {plan.id === 'plan-free' ? 'No setup limits' : 'No compliance lockouts. Standard rules.'}
-                  </p>
                 </div>
               </motion.div>
             );

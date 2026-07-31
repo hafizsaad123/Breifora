@@ -34,7 +34,7 @@ import {
   X,
   Menu
 } from 'lucide-react';
-import Logo from './Logo';
+import Logo from '../components/ui/Logo';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -1078,7 +1078,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                               setOrgFilter('All');
                               setTagFilter('All');
                             }}
-                            className="text-xs text-[#5956E9] font-bold hover:underline cursor-pointer"
+                            className="text-xs text-[#2516FF] font-bold hover:underline cursor-pointer"
                           >
                             Reset all filters
                           </button>
@@ -1120,7 +1120,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     onClick={() => setCurrentPage(page)}
                     className={`min-w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       currentPage === page 
-                        ? 'bg-[#5956E9] text-white shadow-xs' 
+                        ? 'bg-[#2516FF] text-white shadow-xs' 
                         : 'text-slate-500 hover:bg-slate-50'
                     }`}
                   >

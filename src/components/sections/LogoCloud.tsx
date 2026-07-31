@@ -1,4 +1,4 @@
-import { logoCloud } from '../data';
+import { logoCloud } from '../../data';
 import { Layers, Disc, CircleDot, Compass } from 'lucide-react';
 import { motion } from 'motion/react';
 
