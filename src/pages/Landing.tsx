@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { Menu, X } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import dashboardImg from '../assets/images/dashboard.png';
 import bentocard01 from '../assets/images/bentocard01.png';
@@ -12,6 +13,9 @@ import howitworkscard02 from '../assets/images/howitworkscard02.png';
 import howitworkscard03 from '../assets/images/howitworkscard03.png';
 
 export default function Landing() {
+  // Mobile menu open state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   // Billing state for Pricing section (false = Monthly, true = Yearly)
   const [isYearly, setIsYearly] = useState(false);
 
@@ -88,7 +92,7 @@ export default function Landing() {
           </nav>
 
           {/* CTA Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <Link
               to="/login"
               className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all"
@@ -97,13 +101,92 @@ export default function Landing() {
             </Link>
             <Link
               to="/signup"
-              className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all"
+              className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer"
             >
               Start for free
             </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="flex md:hidden items-center">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-full border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Drawer */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-24 left-4 right-4 z-40 md:hidden bg-white/95 backdrop-blur-lg border border-slate-200/90 rounded-2xl p-6 shadow-xl flex flex-col gap-6"
+          >
+            <nav className="flex flex-col gap-4 text-sm font-medium text-slate-700">
+              <a 
+                href="#features" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
+              >
+                Benefits
+              </a>
+              <a 
+                href="#how-it-works" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
+              >
+                How It Works
+              </a>
+              <a 
+                href="#why-briefora" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
+              >
+                Why Briefora
+              </a>
+              <a 
+                href="#pricing" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
+              >
+                Pricing
+              </a>
+              <a 
+                href="#faq" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:text-slate-900 py-2 transition-colors"
+              >
+                FAQs
+              </a>
+            </nav>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <Link
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-medium py-3 rounded-full text-center transition-all"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/signup"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white text-sm font-medium py-3 rounded-full text-center transition-all shadow-sm"
+              >
+                Start for free
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <section className="pt-40 pb-20 px-6 bg-[#FFFFFF] overflow-hidden">
@@ -218,7 +301,7 @@ export default function Landing() {
             Streamline client onboarding, eliminate ambiguity, and protect your profitability.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8 text-left">
             {/* Card 1 */}
             <motion.div 
               whileHover={{ y: -5 }}
@@ -348,7 +431,7 @@ export default function Landing() {
             A seamless three-step workflow designed to save you hours of alignment meetings.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 text-left">
             {/* Step 1 */}
             <motion.div 
               whileHover={{ y: -5 }}
@@ -467,120 +550,120 @@ export default function Landing() {
           <div className="bg-[#FFFFFF] rounded-3xl border border-slate-200/80 overflow-hidden">
             <div className="grid grid-cols-2 divide-x divide-slate-100">
               {/* Table Headers */}
-              <div className="p-6 md:p-8 text-center border-b border-slate-100 flex items-center justify-center">
-                <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Others</h3>
+              <div className="p-4 sm:p-6 md:p-8 text-center border-b border-slate-100 flex items-center justify-center">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Others</h3>
               </div>
-              <div className="p-6 md:p-8 text-center bg-[#2516FF]/5 border-b border-slate-100 flex items-center justify-center">
-                <Logo iconSize={28} />
+              <div className="p-4 sm:p-6 md:p-8 text-center bg-[#2516FF]/5 border-b border-slate-100 flex items-center justify-center">
+                <Logo iconSize={24} />
               </div>
 
               {/* Row 1 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Gathers basic text entries</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Extracts true creative intent</span>
               </div>
 
               {/* Row 2 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Forced signups or account setup</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Zero login, zero friction</span>
               </div>
 
               {/* Row 3 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Hours of manual brief drafting</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Instant AI-generated blueprints</span>
               </div>
 
               {/* Row 4 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Ignores aesthetic context</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Translates stylistic adjectives</span>
               </div>
 
               {/* Row 5 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Overwhelming, endless form fields</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>10 plain-language visual prompts</span>
               </div>
 
               {/* Row 6 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Invites vague, unbilled direction edits</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Halts early scope creep completely</span>
               </div>
 
               {/* Row 7 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Messy email text or raw spreadsheets</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 border-b border-slate-100 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Live workspace & clean PDF exports</span>
               </div>
 
               {/* Row 8 */}
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-3 text-center">
-                <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 text-center border-b border-slate-100">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✕
                 </span>
                 <span>Generic, low-end template feel</span>
               </div>
-              <div className="p-4 md:p-5 text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-3 text-center">
-                <span className="w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 text-center border-b border-slate-100">
+                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                   ✓
                 </span>
                 <span>Premium high-ticket studio vibe</span>
@@ -647,7 +730,7 @@ export default function Landing() {
           </div>
 
           {/* Pricing Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-4">
             {/* Free Plan */}
             <motion.div 
               whileHover={{ y: -5 }}
@@ -711,7 +794,7 @@ export default function Landing() {
             <motion.div 
               whileHover={{ y: -20 }}
               transition={{ duration: 0.25 }}
-              className="bg-[#2516FF] rounded-3xl p-[1.5px] flex flex-col justify-between transition-all md:-translate-y-4 hover:shadow-2xl hover:shadow-[#2516FF]/20"
+              className="bg-[#2516FF] rounded-3xl p-[1.5px] flex flex-col justify-between transition-all lg:-translate-y-4 hover:shadow-2xl hover:shadow-[#2516FF]/20"
             >
               <div className="text-center py-2 text-white font-bold text-xs tracking-wider uppercase">
                 Most Popular
@@ -1132,19 +1215,19 @@ export default function Landing() {
             <div className="md:col-span-3 flex flex-col justify-start">
               <ul className="space-y-3.5 text-sm font-normal text-slate-500">
                 <li>
-                  <a href="#privacy" className="hover:text-slate-900 transition-colors">
+                  <Link to="/privacypolicy" className="hover:text-slate-900 transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#terms" className="hover:text-slate-900 transition-colors">
-                    Terms of Use
-                  </a>
+                  <Link to="/usagepolicy" className="hover:text-slate-900 transition-colors">
+                    Usage Policy
+                  </Link>
                 </li>
                 <li>
-                  <a href="#service" className="hover:text-slate-900 transition-colors">
+                  <Link to="/termsofservice" className="hover:text-slate-900 transition-colors">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

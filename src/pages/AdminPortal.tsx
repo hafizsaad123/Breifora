@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { pricingPlans as defaultPricingPlans, faqList as defaultFaqs, testimonialsList as defaultTestimonials } from '../data';
-import { notifyAdminDataChanged, getAdminHeroCopy, getSystemConfig } from '../lib/adminSync';
+import { notifyAdminDataChanged, getAdminHeroCopy, getSystemConfig, getAdminPrivacyPolicy, getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, getDbSyncStatus, ADMIN_SYNC_EVENT } from '../lib/adminSync';
 
 interface AdminUser {
   id: string;
@@ -92,7 +92,18 @@ export default function AdminPortal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Control Center Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'briefs' | 'pricing' | 'cms' | 'hero' | 'system'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'briefs' | 'pricing' | 'cms' | 'hero' | 'system' | 'legal'>('overview');
+
+  // Legal Policies States
+  const [privacyPolicyText, setPrivacyPolicyText] = useState<string>(() => {
+    return localStorage.getItem('briefora_privacy_policy') || getAdminPrivacyPolicy();
+  });
+  const [usagePolicyText, setUsagePolicyText] = useState<string>(() => {
+    return localStorage.getItem('briefora_usage_policy') || getAdminUsagePolicy();
+  });
+  const [termsOfServiceText, setTermsOfServiceText] = useState<string>(() => {
+    return localStorage.getItem('briefora_terms_of_service') || getAdminTermsOfService();
+  });
 
   // Search and Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -213,57 +224,117 @@ export default function AdminPortal() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  // Sync state changes to localStorage and dispatch event for live site
+  // Sync state changes to localStorage and Firestore globally
   useEffect(() => {
-    localStorage.setItem('briefora_admin_users', JSON.stringify(users));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_users', users);
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_briefs', JSON.stringify(briefs));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_briefs', briefs);
   }, [briefs]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_pricing', JSON.stringify(pricingPlans));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_pricing', pricingPlans);
   }, [pricingPlans]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_faqs', JSON.stringify(faqs));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_faqs', faqs);
   }, [faqs]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_testimonials', JSON.stringify(testimonials));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_testimonials', testimonials);
   }, [testimonials]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_hero_copy', JSON.stringify(heroCopy));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_admin_hero_copy', heroCopy);
   }, [heroCopy]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_maintenance', String(maintenanceMode));
-    localStorage.setItem('briefora_maintenance_msg', maintenanceMsg);
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_maintenance', String(maintenanceMode));
+    syncAndSaveData('briefora_maintenance_msg', maintenanceMsg);
   }, [maintenanceMode, maintenanceMsg]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_signups_enabled', String(signupsAllowed));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_signups_enabled', String(signupsAllowed));
   }, [signupsAllowed]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_broadcast_msg', announcement);
-    localStorage.setItem('briefora_broadcast_active', String(announcementActive));
-    notifyAdminDataChanged();
+    syncAndSaveData('briefora_broadcast_msg', announcement);
+    syncAndSaveData('briefora_broadcast_active', String(announcementActive));
   }, [announcement, announcementActive]);
 
   useEffect(() => {
-    localStorage.setItem('briefora_admin_logs', JSON.stringify(auditLogs));
+    syncAndSaveData('briefora_admin_logs', auditLogs);
   }, [auditLogs]);
+
+  useEffect(() => {
+    syncAndSaveData('briefora_privacy_policy', privacyPolicyText);
+  }, [privacyPolicyText]);
+
+  useEffect(() => {
+    syncAndSaveData('briefora_usage_policy', usagePolicyText);
+  }, [usagePolicyText]);
+
+  useEffect(() => {
+    syncAndSaveData('briefora_terms_of_service', termsOfServiceText);
+  }, [termsOfServiceText]);
+
+  // Real-time Cloud Sync Event Listener to refresh Admin Dashboard instantly if cloud data updates
+  useEffect(() => {
+    const handleSync = () => {
+      const savedUsers = localStorage.getItem('briefora_admin_users');
+      if (savedUsers) {
+        try { setUsers(JSON.parse(savedUsers)); } catch (e) {}
+      }
+      const savedBriefs = localStorage.getItem('briefora_admin_briefs');
+      if (savedBriefs) {
+        try { setBriefs(JSON.parse(savedBriefs)); } catch (e) {}
+      }
+      const savedPricing = localStorage.getItem('briefora_admin_pricing');
+      if (savedPricing) {
+        try { setPricingPlans(JSON.parse(savedPricing)); } catch (e) {}
+      }
+      const savedFaqs = localStorage.getItem('briefora_admin_faqs');
+      if (savedFaqs) {
+        try { setFaqs(JSON.parse(savedFaqs)); } catch (e) {}
+      }
+      const savedTestimonials = localStorage.getItem('briefora_admin_testimonials');
+      if (savedTestimonials) {
+        try { setTestimonials(JSON.parse(savedTestimonials)); } catch (e) {}
+      }
+      const savedHeroCopy = localStorage.getItem('briefora_admin_hero_copy');
+      if (savedHeroCopy) {
+        try { setHeroCopy(JSON.parse(savedHeroCopy)); } catch (e) {}
+      }
+      
+      const maintenance = localStorage.getItem('briefora_maintenance') === 'true';
+      if (maintenance !== maintenanceMode) setMaintenanceMode(maintenance);
+      
+      const mMsg = localStorage.getItem('briefora_maintenance_msg') || 'Breifora is undergoing scheduled system upgrades. We will be back online shortly.';
+      if (mMsg !== maintenanceMsg) setMaintenanceMsg(mMsg);
+      
+      const signups = localStorage.getItem('briefora_signups_enabled') !== 'false';
+      if (signups !== signupsAllowed) setSignupsAllowed(signups);
+      
+      const bMsg = localStorage.getItem('briefora_broadcast_msg') || '⚡ Breifora v2.4 Release: Full interactive visual blueprint generator is live!';
+      if (bMsg !== announcement) setAnnouncement(bMsg);
+      
+      const bActive = localStorage.getItem('briefora_broadcast_active') === 'true';
+      if (bActive !== announcementActive) setAnnouncementActive(bActive);
+      
+      const savedPrivacy = localStorage.getItem('briefora_privacy_policy');
+      if (savedPrivacy && savedPrivacy !== privacyPolicyText) setPrivacyPolicyText(savedPrivacy);
+      
+      const savedUsage = localStorage.getItem('briefora_usage_policy');
+      if (savedUsage && savedUsage !== usagePolicyText) setUsagePolicyText(savedUsage);
+      
+      const savedTerms = localStorage.getItem('briefora_terms_of_service');
+      if (savedTerms && savedTerms !== termsOfServiceText) setTermsOfServiceText(savedTerms);
+    };
+
+    window.addEventListener(ADMIN_SYNC_EVENT, handleSync);
+    return () => window.removeEventListener(ADMIN_SYNC_EVENT, handleSync);
+  }, [maintenanceMode, maintenanceMsg, signupsAllowed, announcement, announcementActive, privacyPolicyText, usagePolicyText, termsOfServiceText]);
 
   // Helper log function
   const addAuditLog = (action: string, target: string) => {
@@ -683,6 +754,15 @@ export default function AdminPortal() {
           >
             <Settings className="w-4 h-4" /> Global Parameters
           </button>
+
+          <button
+            onClick={() => setActiveTab('legal')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'legal' ? 'bg-brand-primary text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" /> Legal & Policies
+          </button>
         </div>
 
         {/* TAB 1: SYSTEM OVERVIEW */}
@@ -749,7 +829,7 @@ export default function AdminPortal() {
                 <Sliders className="w-5 h-5 text-brand-primary" /> Live System Switchboard
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
                 {/* Maintenance Toggle */}
                 <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
                   <div>
@@ -1038,7 +1118,7 @@ export default function AdminPortal() {
               <p className="text-xs text-slate-500 mt-0.5">Edit prices or descriptions to update the live pricing grid instantly</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {pricingPlans.map((plan) => (
                 <div key={plan.id} className="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 space-y-4">
                   <div className="flex items-center justify-between">
@@ -1280,6 +1360,146 @@ export default function AdminPortal() {
                   }`}
                 >
                   {signupsAllowed ? 'Signups Allowed' : 'Signups Paused'}
+                </button>
+              </div>
+
+              {/* CLOUD DB SYNCHRONIZATION PARAMETERS */}
+              <div className="p-5 border border-slate-200 rounded-2xl bg-slate-50/50 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-brand-primary" />
+                    <h4 className="text-xs font-bold text-slate-900 font-sans">Global Cloud Sync Status</h4>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                    getDbSyncStatus().connected 
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}>
+                    {getDbSyncStatus().connected ? '🟢 Connected (Firestore Live)' : '🟡 Local Storage Offline Cache'}
+                  </span>
+                </div>
+
+                <div className="text-xs space-y-2 text-slate-600 leading-relaxed">
+                  <p>
+                    By default, changes made in this admin dashboard only persist inside your <strong>own browser storage</strong>. To instantly sync pricing changes (such as <strong>pro plan $9 &rarr; $0</strong>), user logs, legal agreements, and system states in real-time for visitors globally across all browsers, you can link this live site (Netlify/Vercel) to a free Google Firebase Firestore database.
+                  </p>
+                </div>
+
+                {/* DB Sync Settings Guidelines */}
+                <div className="bg-white border border-slate-200/85 rounded-xl p-4 space-y-3">
+                  <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">🚀 Connect in 1 Minute (100% Free):</h5>
+                  <ol className="list-decimal list-inside text-[11px] text-slate-500 space-y-2 leading-relaxed">
+                    <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-brand-primary font-bold underline">Firebase Console</a> and create a standard project.</li>
+                    <li>Add a <strong>Web App</strong> to retrieve your configuration credentials.</li>
+                    <li>Inside your Netlify Dashboard (or local <code>.env</code> file), navigate to <strong>Site Settings &rarr; Environment Variables</strong>.</li>
+                    <li>Add the following 6 environment keys copied from your configuration object:</li>
+                  </ol>
+
+                  <div className="bg-slate-950 text-slate-200 rounded-lg p-3 font-mono text-[10px] space-y-1 block select-all overflow-x-auto leading-normal">
+                    <div>VITE_FIREBASE_API_KEY="..."</div>
+                    <div>VITE_FIREBASE_AUTH_DOMAIN="..."</div>
+                    <div>VITE_FIREBASE_PROJECT_ID="..."</div>
+                    <div>VITE_FIREBASE_STORAGE_BUCKET="..."</div>
+                    <div>VITE_FIREBASE_MESSAGING_SENDER_ID="..."</div>
+                    <div>VITE_FIREBASE_APP_ID="..."</div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 leading-normal">
+                    Once defined, redeploy your site, and the platform will automatically boot in <strong>Cloud Live Mode</strong>, giving you 1000% real-time synchronized control.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: LEGAL & POLICIES MANAGEMENT */}
+        {activeTab === 'legal' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-2xs space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Legal Agreements & Policies</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Edit and manage Privacy Policy, Usage Policy, and Terms of Service directly. Changes take effect instantly across the live platform.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Privacy Policy Panel */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 bg-slate-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-brand-primary" />
+                    <h4 className="text-sm font-bold text-slate-900">Privacy Policy</h4>
+                  </div>
+                  <p className="text-xs text-slate-500">Governs data storage and encryption policies.</p>
+                  <textarea
+                    rows={16}
+                    value={privacyPolicyText}
+                    onChange={(e) => setPrivacyPolicyText(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-brand-primary font-mono leading-relaxed"
+                    placeholder="HTML content or text..."
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    addAuditLog('Updated Privacy Policy text', 'Privacy Policy Content');
+                    showToast('Privacy Policy updated successfully!');
+                  }}
+                  className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Changes
+                </button>
+              </div>
+
+              {/* Usage Policy Panel */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 bg-slate-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-brand-primary" />
+                    <h4 className="text-sm font-bold text-slate-900">Usage Policy</h4>
+                  </div>
+                  <p className="text-xs text-slate-500">Governs acceptable parameters and client requirements.</p>
+                  <textarea
+                    rows={16}
+                    value={usagePolicyText}
+                    onChange={(e) => setUsagePolicyText(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-brand-primary font-mono leading-relaxed"
+                    placeholder="HTML content or text..."
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    addAuditLog('Updated Usage Policy text', 'Usage Policy Content');
+                    showToast('Usage Policy updated successfully!');
+                  }}
+                  className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Changes
+                </button>
+              </div>
+
+              {/* Terms of Service Panel */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 bg-slate-50/50 flex flex-col justify-between space-y-4">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-brand-primary" />
+                    <h4 className="text-sm font-bold text-slate-900">Terms of Service</h4>
+                  </div>
+                  <p className="text-xs text-slate-500">Governs agreements, subscriptions, and liabilities.</p>
+                  <textarea
+                    rows={16}
+                    value={termsOfServiceText}
+                    onChange={(e) => setTermsOfServiceText(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-brand-primary font-mono leading-relaxed"
+                    placeholder="HTML content or text..."
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    addAuditLog('Updated Terms of Service text', 'Terms of Service Content');
+                    showToast('Terms of Service updated successfully!');
+                  }}
+                  className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Changes
                 </button>
               </div>
             </div>

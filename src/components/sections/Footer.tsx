@@ -1,4 +1,5 @@
 import { Layers, Github, Twitter, Linkedin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Logo from '../ui/Logo';
 
 export default function Footer() {
@@ -75,7 +76,10 @@ export default function Footer() {
                 <button onClick={() => scrollToSection('faqs')} className="font-normal hover:text-[#5956E9] transition-colors block cursor-pointer">FAQs</button>
               </li>
               <li>
-                <a href="#terms" className="font-normal hover:text-slate-900 transition-colors block">Terms of Service</a>
+                <Link to="/termsofservice" className="font-normal hover:text-slate-900 transition-colors block">Terms of Service</Link>
+              </li>
+              <li>
+                <Link to="/usagepolicy" className="font-normal hover:text-slate-900 transition-colors block">Usage Policy</Link>
               </li>
             </ul>
           </div>
@@ -86,8 +90,9 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
           <span>Breifora © {currentYear}. All rights reserved.</span>
           <div className="flex gap-6">
-            <a href="#privacy" className="hover:text-slate-900">Privacy Policy</a>
-            <a href="#security" className="hover:text-slate-900">Security</a>
+            <Link to="/privacypolicy" className="hover:text-slate-900">Privacy Policy</Link>
+            <Link to="/usagepolicy" className="hover:text-slate-900">Usage Policy</Link>
+            <Link to="/termsofservice" className="hover:text-slate-900">Terms of Service</Link>
           </div>
         </div>
       </div>

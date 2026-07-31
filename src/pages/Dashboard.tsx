@@ -661,7 +661,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
 
           {/* 🧱 THREE-COLUMN METRIC CARD GRID LAYER (Perfect breakdown match) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             
             {/* Outreach Sent Stat Card */}
             <div className="bg-white border border-slate-200/90 rounded-[20px] p-5 flex flex-col justify-between relative shadow-xs">
@@ -784,7 +784,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             
             {/* Control Strip Headers */}
             <div className="p-5 border-b border-slate-150 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <h3 className="font-extrabold text-slate-900 text-sm">Recent messages</h3>
                 
                 {/* Control search + status + organization + tags filters dropdowns */}
