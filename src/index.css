@@ -1,34 +1,56 @@
-@import "./assets/styles/variables.css";
-@import "./assets/styles/buttons.css";
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+@import "tailwindcss";
 
-* {
-  box-sizing: border-box;
+@theme {
+  --color-brand-primary: #5956E9;
+  --color-brand-purple-dark: #403DF4;
+  --color-brand-bg-light: #F8F9FE;
+  --font-sans: "Geist", sans-serif;
+  --font-display: "Geist", sans-serif;
+  --font-geist: "Geist", sans-serif;
 }
 
 body {
-  margin: 0;
-  font-family: var(--font-family);
-  background: var(--bg-body);
-  color: var(--text-primary);
+  font-family: "Geist", sans-serif;
 }
 
-a {
-  color: #2563eb;
-  text-decoration: none;
+/* Custom visual styles to perfectly match mockup.jpg */
+.ambient-hero-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(224, 231, 255, 0.6) 0%, rgba(243, 232, 255, 0.5) 40%, rgba(255, 255, 255, 0) 70%), #ffffff;
 }
 
-button {
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: #111827;
-  color: white;
+.ambient-footer-glow {
+  background: radial-gradient(circle at 50% 100%, rgba(224, 231, 255, 0.4) 0%, rgba(243, 232, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
 }
 
-input {
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
+.mesh-dot-bg {
+  background-image: radial-gradient(rgba(89, 86, 233, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
+
+.gradient-cta-card {
+  background: linear-gradient(135deg, #5956E9 0%, #7c3aed 100%);
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism details */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+

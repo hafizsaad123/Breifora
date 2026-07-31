@@ -1,0 +1,6 @@
+{
+  "name": "Briefora",
+  "description": "All-in-one brand strategy workspace for elite designers to align with clients before opening Figma.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
