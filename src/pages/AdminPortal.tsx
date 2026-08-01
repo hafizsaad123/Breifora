@@ -5,7 +5,7 @@ import {
   ShieldCheck, Lock, User, Users, Search, Plus, Trash2, 
   CheckCircle, AlertTriangle, Activity, Settings, DollarSign, 
   FileText, LogOut, Key, RefreshCw, Sliders, Layers, X, 
-  ChevronRight, CreditCard, Save, Globe, ExternalLink, Zap 
+  ChevronRight, CreditCard, Save, Globe, ExternalLink, Zap, Edit3
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { pricingPlans as defaultPricingPlans, faqList as defaultFaqs, testimonialsList as defaultTestimonials } from '../data';
@@ -79,6 +79,8 @@ export default function AdminPortal() {
       { id: 'usr-102', name: 'Elena Rostova', email: 'elena@rostovastudio.com', plan: 'Pro', status: 'Active', createdAt: '2025-06-28', onboarded: true, briefsCount: 8 },
       { id: 'usr-103', name: 'Marcus Vance', email: 'marcus@vancedesign.co', plan: 'Pro', status: 'Active', createdAt: '2025-07-02', onboarded: true, briefsCount: 5 },
       { id: 'usr-104', name: 'Sarah Jenkins', email: 'sarah@freelancedesign.net', plan: 'Free', status: 'Active', createdAt: '2025-07-15', onboarded: false, briefsCount: 1 },
+      { id: 'usr-105', name: 'Alex Rivera', email: 'alex@riveradesign.org', plan: 'Free', status: 'Active', createdAt: '2025-07-20', onboarded: true, briefsCount: 2 },
+      { id: 'usr-106', name: 'Taylor Swift', email: 'taylor@swiftbite.app', plan: 'Studio', status: 'Active', createdAt: '2025-07-25', onboarded: true, briefsCount: 11 },
     ];
   });
 
@@ -91,6 +93,8 @@ export default function AdminPortal() {
     return [
       { id: 'brf-901', title: 'Zenli Brand Alignment', clientName: 'Zenli Tech Inc.', userEmail: 'devin@brandconsulting.io', status: 'Signed Off', createdAt: '2025-07-28', views: 34 },
       { id: 'brf-902', title: 'Lumora Identity Brief', clientName: 'Lumora Health', userEmail: 'elena@rostovastudio.com', status: 'Active', createdAt: '2025-07-29', views: 18 },
+      { id: 'brf-903', title: 'Vance Mobile App Wireframes', clientName: 'Vance Logistics', userEmail: 'marcus@vancedesign.co', status: 'Draft', createdAt: '2025-07-30', views: 5 },
+      { id: 'brf-904', title: 'SwiftBite UI Redesign', clientName: 'SwiftBite Global', userEmail: 'taylor@swiftbite.app', status: 'Signed Off', createdAt: '2025-07-31', views: 42 },
     ];
   });
 
@@ -121,12 +125,6 @@ export default function AdminPortal() {
   const [isAddFaqOpen, setIsAddFaqOpen] = useState(false);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
   const [newFaqAnswer, setNewFaqAnswer] = useState('');
-
-  const [isAddTestimonialOpen, setIsAddTestimonialOpen] = useState(false);
-  const [newTestName, setNewTestName] = useState('');
-  const [newTestRole, setNewTestRole] = useState('');
-  const [newTestTitle, setNewTestTitle] = useState('');
-  const [newTestText, setNewTestText] = useState('');
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -183,6 +181,52 @@ export default function AdminPortal() {
   const handleLogout = () => {
     sessionStorage.removeItem('briefora_admin_authed');
     setIsAuthenticated(false);
+  };
+
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+    const newUser: AdminUser = {
+      id: `usr-${Date.now()}`,
+      name: newUserName,
+      email: newUserEmail,
+      plan: newUserPlan,
+      status: 'Active',
+      createdAt: new Date().toISOString().split('T')[0],
+      onboarded: true,
+      briefsCount: 0,
+    };
+    setUsers([newUser, ...users]);
+    setIsAddUserOpen(false);
+    setNewUserName('');
+    setNewUserEmail('');
+    showToast(`User ${newUser.name} created!`);
+  };
+
+  const handleDeleteUser = (id: string) => {
+    setUsers(users.filter(u => u.id !== id));
+    showToast('User deleted');
+  };
+
+  const handleDeleteBrief = (id: string) => {
+    setBriefs(briefs.filter(b => b.id !== id));
+    showToast('Brief removed');
+  };
+
+  const handleAddFaq = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFaqQuestion || !newFaqAnswer) return;
+    const newFaq = { q: newFaqQuestion, a: newFaqAnswer };
+    setFaqs([...faqs, newFaq]);
+    setIsAddFaqOpen(false);
+    setNewFaqQuestion('');
+    setNewFaqAnswer('');
+    showToast('FAQ item added!');
+  };
+
+  const handleDeleteFaq = (idx: number) => {
+    setFaqs(faqs.filter((_, i) => i !== idx));
+    showToast('FAQ deleted');
   };
 
   const filteredUsers = users.filter((u) => {
@@ -311,6 +355,7 @@ export default function AdminPortal() {
       </header>
 
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col gap-6">
+        {/* Navigation Tabs */}
         <div className="bg-white rounded-2xl p-1.5 border border-slate-200/80 flex flex-wrap gap-1">
           {[
             { id: 'overview', label: 'Overview', icon: Activity },
@@ -337,6 +382,7 @@ export default function AdminPortal() {
           })}
         </div>
 
+        {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -357,16 +403,40 @@ export default function AdminPortal() {
                 <div className="text-3xl font-black text-slate-900 mt-2">{briefs.length}</div>
               </div>
             </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80">
+              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-brand-primary" /> Admin System Activity Logs
+              </h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto font-mono text-xs">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="p-2.5 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100">
+                    <span className="text-slate-700 font-bold">[{log.timestamp}] {log.action}</span>
+                    <span className="text-slate-400">{log.target}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
+        {/* USERS TAB */}
         {activeTab === 'users' && (
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h3 className="text-lg font-bold text-slate-900">User Management</h3>
-              <button onClick={() => setIsAddUserOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add User
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Search user or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs w-full sm:w-64"
+                />
+                <button onClick={() => setIsAddUserOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 shrink-0">
+                  <Plus className="w-4 h-4" /> Add User
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto border border-slate-200 rounded-xl">
               <table className="w-full text-left text-xs">
@@ -376,15 +446,24 @@ export default function AdminPortal() {
                     <th className="p-3.5">Plan</th>
                     <th className="p-3.5">Status</th>
                     <th className="p-3.5">Joined</th>
+                    <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td className="p-3.5 font-bold">{u.name} ({u.email})</td>
+                    <tr key={u.id} className="hover:bg-slate-50/50">
+                      <td className="p-3.5 font-bold">
+                        <div>{u.name}</div>
+                        <div className="text-slate-400 font-normal">{u.email}</div>
+                      </td>
                       <td className="p-3.5"><span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 font-bold rounded-full">{u.plan}</span></td>
                       <td className="p-3.5"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded-full">{u.status}</span></td>
                       <td className="p-3.5 font-mono">{u.createdAt}</td>
+                      <td className="p-3.5 text-right">
+                        <button onClick={() => handleDeleteUser(u.id)} className="p-1 text-slate-400 hover:text-rose-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -392,7 +471,342 @@ export default function AdminPortal() {
             </div>
           </div>
         )}
+
+        {/* HERO COPY TAB */}
+        {activeTab === 'hero' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900">Hero Section Copy Editor</h3>
+              <button onClick={() => showToast('Hero Copy Saved & Synced!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                <Save className="w-4 h-4" /> Save Copy
+              </button>
+            </div>
+            <div className="space-y-4 max-w-2xl">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Badge Text</label>
+                <input
+                  type="text"
+                  value={heroCopy.badge}
+                  onChange={(e) => setHeroCopy({ ...heroCopy, badge: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Main Title</label>
+                <input
+                  type="text"
+                  value={heroCopy.title}
+                  onChange={(e) => setHeroCopy({ ...heroCopy, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Highlighted Title Gradient Text</label>
+                <input
+                  type="text"
+                  value={heroCopy.highlightTitle}
+                  onChange={(e) => setHeroCopy({ ...heroCopy, highlightTitle: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-brand-primary font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Subtitle</label>
+                <textarea
+                  rows={3}
+                  value={heroCopy.subtitle}
+                  onChange={(e) => setHeroCopy({ ...heroCopy, subtitle: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Primary CTA Button</label>
+                  <input
+                    type="text"
+                    value={heroCopy.primaryCta}
+                    onChange={(e) => setHeroCopy({ ...heroCopy, primaryCta: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Secondary CTA Button</label>
+                  <input
+                    type="text"
+                    value={heroCopy.secondaryCta}
+                    onChange={(e) => setHeroCopy({ ...heroCopy, secondaryCta: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRICING TAB */}
+        {activeTab === 'pricing' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900">Pricing Tier Management</h3>
+              <button onClick={() => showToast('Pricing Plans Updated!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                <Save className="w-4 h-4" /> Save Pricing
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {pricingPlans.map((plan, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-900">{plan.name}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-slate-200 rounded-md text-slate-700">{plan.badge || 'Plan'}</span>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400">Monthly Price ($)</label>
+                    <input
+                      type="number"
+                      value={plan.price}
+                      onChange={(e) => {
+                        const updated = [...pricingPlans];
+                        updated[idx].price = Number(e.target.value);
+                        setPricingPlans(updated);
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400">Description</label>
+                    <input
+                      type="text"
+                      value={plan.desc || plan.description || ''}
+                      onChange={(e) => {
+                        const updated = [...pricingPlans];
+                        updated[idx].desc = e.target.value;
+                        setPricingPlans(updated);
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs mt-1"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* FAQS & CMS TAB */}
+        {activeTab === 'cms' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900">FAQ Content Management</h3>
+              <button onClick={() => setIsAddFaqOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add FAQ Item
+              </button>
+            </div>
+            <div className="space-y-3">
+              {faqs.map((faq, idx) => (
+                <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-start gap-4">
+                  <div className="space-y-1">
+                    <div className="font-bold text-xs text-slate-900">Q: {faq.q}</div>
+                    <div className="text-xs text-slate-600">A: {faq.a}</div>
+                  </div>
+                  <button onClick={() => handleDeleteFaq(idx)} className="text-slate-400 hover:text-rose-600 p-1">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* BRIEFS TAB */}
+        {activeTab === 'briefs' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <h3 className="text-lg font-bold text-slate-900">Interactive Client Briefs Overview</h3>
+            <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 uppercase text-[10px] text-slate-500 font-bold">
+                  <tr>
+                    <th className="p-3.5">Brief Title</th>
+                    <th className="p-3.5">Client</th>
+                    <th className="p-3.5">Creator Email</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Views</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {briefs.map((b) => (
+                    <tr key={b.id}>
+                      <td className="p-3.5 font-bold text-slate-900">{b.title}</td>
+                      <td className="p-3.5 text-slate-600 font-medium">{b.clientName}</td>
+                      <td className="p-3.5 text-slate-500 font-mono">{b.userEmail}</td>
+                      <td className="p-3.5">
+                        <span className={`px-2 py-0.5 font-bold rounded-full ${
+                          b.status === 'Signed Off' ? 'bg-emerald-100 text-emerald-700' :
+                          b.status === 'Active' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="p-3.5 font-bold">{b.views}</td>
+                      <td className="p-3.5 text-right">
+                        <button onClick={() => handleDeleteBrief(b.id)} className="p-1 text-slate-400 hover:text-rose-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* GLOBAL SYSTEM TAB */}
+        {activeTab === 'system' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <h3 className="text-lg font-bold text-slate-900">System Controls & Broadcast Banners</h3>
+            <div className="space-y-6 max-w-xl">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <div className="font-bold text-xs text-slate-900">Maintenance Mode</div>
+                  <div className="text-[11px] text-slate-500">Redirects visitors to maintenance overlay</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={maintenanceMode}
+                  onChange={(e) => {
+                    setMaintenanceMode(e.target.checked);
+                    showToast(e.target.checked ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled');
+                  }}
+                  className="w-5 h-5 accent-brand-primary"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <div className="font-bold text-xs text-slate-900">User Signups Enabled</div>
+                  <div className="text-[11px] text-slate-500">Allow new users to register on the site</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={signupsAllowed}
+                  onChange={(e) => {
+                    setSignupsAllowed(e.target.checked);
+                    showToast(e.target.checked ? 'Signups Allowed' : 'Signups Disabled');
+                  }}
+                  className="w-5 h-5 accent-brand-primary"
+                />
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-xs text-slate-900">Broadcast Announcement Banner</div>
+                    <div className="text-[11px] text-slate-500">Show top banner message across website</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={announcementActive}
+                    onChange={(e) => {
+                      setAnnouncementActive(e.target.checked);
+                      showToast(e.target.checked ? 'Banner Activated' : 'Banner Deactivated');
+                    }}
+                    className="w-5 h-5 accent-brand-primary"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={announcement}
+                  onChange={(e) => setAnnouncement(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LEGAL POLICIES TAB */}
+        {activeTab === 'legal' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900">Legal Document Editors</h3>
+              <button onClick={() => showToast('Legal documents updated!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+                <Save className="w-4 h-4" /> Save Legal Copy
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Privacy Policy HTML/Text</label>
+                <textarea
+                  rows={4}
+                  value={privacyPolicyText}
+                  onChange={(e) => setPrivacyPolicyText(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Usage Policy HTML/Text</label>
+                <textarea
+                  rows={4}
+                  value={usagePolicyText}
+                  onChange={(e) => setUsagePolicyText(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Terms of Service HTML/Text</label>
+                <textarea
+                  rows={4}
+                  value={termsOfServiceText}
+                  onChange={(e) => setTermsOfServiceText(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ADD USER MODAL */}
+      <AnimatePresence>
+        {isAddUserOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-slate-900 text-sm">Create New Account</h4>
+                <button onClick={() => setIsAddUserOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleAddUser} className="space-y-3">
+                <input type="text" placeholder="Full Name" required value={newUserName} onChange={(e) => setNewUserName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs" />
+                <input type="email" placeholder="Email Address" required value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs" />
+                <select value={newUserPlan} onChange={(e) => setNewUserPlan(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold">
+                  <option value="Free">Free Plan</option>
+                  <option value="Pro">Pro Plan ($9/mo)</option>
+                  <option value="Studio">Studio Plan ($29/mo)</option>
+                </select>
+                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2">Create User</button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ADD FAQ MODAL */}
+      <AnimatePresence>
+        {isAddFaqOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-slate-900 text-sm">Add New FAQ Question</h4>
+                <button onClick={() => setIsAddFaqOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleAddFaq} className="space-y-3">
+                <input type="text" placeholder="Question" required value={newFaqQuestion} onChange={(e) => setNewFaqQuestion(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold" />
+                <textarea rows={3} placeholder="Answer" required value={newFaqAnswer} onChange={(e) => setNewFaqAnswer(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium" />
+                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2">Add FAQ</button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
