@@ -1,200 +1,101 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { pricingPlans, faqList, testimonialsList } from '../data';
-import { supabase } from '../utils/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-export const ADMIN_SYNC_EVENT = 'briefora_admin_data_changed';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export function notifyAdminDataChanged() {
-  window.dispatchEvent(new CustomEvent(ADMIN_SYNC_EVENT));
-}
+// Check if credentials exist
+const isCloudConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+export const supabase = isCloudConfigured 
+  ? createClient(supabaseUrl, supabaseAnonKey) 
+  : null;
 
-let db: any = null;
-let isFirebaseConnected = false;
-
-// Initialize Firebase if configuration variables are present
-if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-  try {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    isFirebaseConnected = true;
-    console.log('Briefora DB Sync: Connected to cloud Firestore sync engine!');
-  } catch (error) {
-    console.error('Briefora DB Sync: Failed to initialize Firebase:', error);
-  }
+if (isCloudConfigured) {
+  console.log('✅ Briefora DB Sync: Connected to Supabase Cloud live!');
 } else {
-  console.log('Briefora DB Sync: Running in Local Cache Mode. Configure VITE_FIREBASE_API_KEY for live global cloud sync.');
+  console.warn('⚠️ Briefora DB Sync: Running in Local Cache Mode. Configure VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY in Vercel for live sync.');
 }
 
-// Check database connection status
-export function getDbSyncStatus() {
-  return {
-    connected: isFirebaseConnected,
-    mode: isFirebaseConnected ? 'Cloud Live Mode' : 'Local Cache Mode',
-    configMissing: !firebaseConfig.apiKey,
-    config: firebaseConfig,
-  };
-}
+export const ADMIN_SYNC_EVENT = 'briefora_admin_sync_event';
 
-// Unified save & sync function (updates localStorage + Firestore + Supabase)
-export function syncAndSaveData(key: string, value: any) {
-  const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-  
-  // Update local cache immediately for zero lag
-  localStorage.setItem(key, serialized);
-  notifyAdminDataChanged();
+/**
+ * Saves data to Supabase app_settings table AND falls back to localStorage
+ */
+export async function syncAndSaveData(key: string, value: any) {
+  // Always update local cache for instant UI responsiveness
+  const jsonString = typeof value === 'string' ? value : JSON.stringify(value);
+  localStorage.setItem(key, jsonString);
+  window.dispatchEvent(new Event(ADMIN_SYNC_EVENT));
 
-  // 1. If Firebase cloud mode is active, persist to Firestore in the background
-  if (isFirebaseConnected && db) {
-    const docId = key.replace('briefora_', '').replace('admin_', '');
-    const docRef = doc(db, 'briefora_settings', docId);
-    setDoc(docRef, {
-      data: value,
-      updatedAt: new Date().toISOString(),
-    }).catch((err) => {
-      console.error(`Firestore Cloud Sync failed for ${key}:`, err);
-    });
-  }
-
-  // 2. Persist to Supabase if available
+  // Sync to Supabase if configured
   if (supabase) {
-    const settingKey = key.replace('briefora_', '').replace('admin_', '');
-    Promise.resolve(
-      supabase
+    try {
+      const { error } = await supabase
         .from('app_settings')
-        .upsert({ key: settingKey, value: value, updated_at: new Date().toISOString() })
-    ).catch(() => {
-      // Silently catch if table not yet created in Supabase
-    });
-  }
-}
+        .upsert({ key, value: typeof value === 'string' ? { text: value } : value, updated_at: new Date().toISOString() });
 
-// Setup live subscription listeners if connected to Firestore
-const docIds = [
-  'users',
-  'briefs',
-  'pricing',
-  'faqs',
-  'testimonials',
-  'hero_copy',
-  'maintenance',
-  'maintenance_msg',
-  'signups_enabled',
-  'broadcast_msg',
-  'broadcast_active',
-  'privacy_policy',
-  'usage_policy',
-  'terms_of_service',
-];
-
-if (isFirebaseConnected && db) {
-  docIds.forEach((id) => {
-    const docRef = doc(db, 'briefora_settings', id);
-    onSnapshot(docRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const cloudData = snapshot.data();
-        const value = cloudData?.data;
-        if (value === undefined) return;
-
-        const isLegal = id === 'privacy_policy' || id === 'usage_policy' || id === 'terms_of_service';
-        const key = `briefora_` + (isLegal ? '' : 'admin_') + id;
-
-        // Check difference before updating to avoid infinite loops
-        const localValue = localStorage.getItem(key);
-        const serializedCloud = typeof value === 'string' ? value : JSON.stringify(value);
-
-        if (localValue !== serializedCloud) {
-          localStorage.setItem(key, serializedCloud);
-          notifyAdminDataChanged();
-        }
+      if (error) {
+        console.error(`Error syncing key "${key}" to Supabase:`, error.message);
       }
-    });
-  });
-}
-
-// Getters
-export function getAdminPricing() {
-  const saved = localStorage.getItem('briefora_admin_pricing');
-  if (saved) {
-    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    } catch (err) {
+      console.error('Supabase sync exception:', err);
+    }
   }
-  return pricingPlans;
 }
 
-export function getAdminFaqs() {
-  const saved = localStorage.getItem('briefora_admin_faqs');
-  if (saved) {
-    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+/**
+ * Loads data from Supabase app_settings table or local fallback
+ */
+export async function fetchSyncedData(key: string, fallbackDefault: any) {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', key)
+        .single();
+
+      if (data && data.value && !error) {
+        return data.value.text !== undefined ? data.value.text : data.value;
+      }
+    } catch (err) {
+      console.error(`Failed to fetch ${key} from Supabase:`, err);
+    }
   }
-  return faqList;
-}
 
-export function getAdminTestimonials() {
-  const saved = localStorage.getItem('briefora_admin_testimonials');
-  if (saved) {
-    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+  // Fallback to local storage if not found in cloud
+  const local = localStorage.getItem(key);
+  if (local) {
+    try {
+      return JSON.parse(local);
+    } catch {
+      return local;
+    }
   }
-  return testimonialsList;
+
+  return fallbackDefault;
 }
 
-export function getAdminHeroCopy() {
+export function getDbSyncStatus() {
+  return isCloudConfigured;
+}
+
+// Fallback getters for initial state
+export const getAdminHeroCopy = () => {
   const saved = localStorage.getItem('briefora_admin_hero_copy');
   if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return { ...parsed, secondaryCta: parsed.secondaryCta !== undefined ? parsed.secondaryCta : "Invalid Credentials" };
-    } catch (e) { console.error(e); }
+    try { return JSON.parse(saved); } catch {}
   }
   return {
-    badge: "⚡ Visual Client Onboarding Engine v2.4",
-    title: "Client Onboarding Visualized.",
-    highlightTitle: "Scope Locked in 10 Minutes.",
-    subtitle: "Stop losing profit margins to unbilled revision rounds. Send a magic Briefora link, let clients visually tap their requirements, and automatically lock in signed-off blueprints.",
-    primaryCta: "Start Free Onboarding",
-    secondaryCta: "Invalid Credentials"
+    badge: '⚡ AI Client Discovery for Brand Designers',
+    title: 'Turn Vague Client Ideas Into',
+    highlightTitle: 'Clear Brand Strategy',
+    subtitle: 'Stop chasing confusing feedback and endless revisions. Briefora transforms messy client thoughts into strategic creative direction before the first concept is designed.',
+    primaryCta: 'Start for free',
+    secondaryCta: 'See How It Works',
   };
-}
+};
 
-export function getSystemConfig() {
-  return {
-    maintenanceMode: localStorage.getItem('briefora_maintenance') === 'true',
-    maintenanceMsg: localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing scheduled system upgrades. We will be back online shortly.',
-    signupsEnabled: localStorage.getItem('briefora_signups_enabled') !== 'false',
-    broadcastActive: localStorage.getItem('briefora_broadcast_active') === 'true',
-    broadcastMsg: localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Release: Full interactive visual blueprint generator is live!',
-  };
-}
-
-export function getAdminPrivacyPolicy(): string {
-  const saved = localStorage.getItem('briefora_privacy_policy');
-  if (saved) return saved;
-  return `<h1>Privacy Policy</h1>
-<p>Last updated: July 31, 2026</p>
-<p>Welcome to Briefora! Your privacy is of paramount importance to us. This Privacy Policy details how we collect, use, and safeguard your personal information when you use our service.</p>`;
-}
-
-export function getAdminUsagePolicy(): string {
-  const saved = localStorage.getItem('briefora_usage_policy');
-  if (saved) return saved;
-  return `<h1>Usage Policy</h1>
-<p>Last updated: July 31, 2026</p>
-<p>This Usage Policy outlines the acceptable parameters and restrictions for utilizing the Briefora workspace, interactive briefs, and client onboarding tools.</p>`;
-}
-
-export function getAdminTermsOfService(): string {
-  const saved = localStorage.getItem('briefora_terms_of_service');
-  if (saved) return saved;
-  return `<h1>Terms of Service</h1>
-<p>Last updated: July 31, 2026</p>
-<p>Please read these Terms of Service ("Terms") carefully before using the Briefora application.</p>`;
-}
+export const getAdminPrivacyPolicy = () => localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
+export const getAdminUsagePolicy = () => localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
+export const getAdminTermsOfService = () => localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
