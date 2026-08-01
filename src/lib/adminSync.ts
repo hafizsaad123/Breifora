@@ -1,12 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { pricingPlans, faqList, testimonialsList } from '../data';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 // Check if credentials exist
 const isCloudConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = isCloudConfigured 
+export const supabase: SupabaseClient | null = isCloudConfigured && supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : null;
 
@@ -19,20 +20,19 @@ if (isCloudConfigured) {
 export const ADMIN_SYNC_EVENT = 'briefora_admin_sync_event';
 
 /**
- * Saves data to Supabase app_settings table AND falls back to localStorage
+ * Saves data to Supabase app_settings table AND updates localStorage
  */
-export async function syncAndSaveData(key: string, value: any) {
-  // Always update local cache for instant UI responsiveness
+export async function syncAndSaveData(key: string, value: unknown): Promise<void> {
   const jsonString = typeof value === 'string' ? value : JSON.stringify(value);
   localStorage.setItem(key, jsonString);
   window.dispatchEvent(new Event(ADMIN_SYNC_EVENT));
 
-  // Sync to Supabase if configured
   if (supabase) {
     try {
+      const payload = typeof value === 'string' ? { text: value } : (value as Record<string, unknown>);
       const { error } = await supabase
         .from('app_settings')
-        .upsert({ key, value: typeof value === 'string' ? { text: value } : value, updated_at: new Date().toISOString() });
+        .upsert({ key, value: payload, updated_at: new Date().toISOString() });
 
       if (error) {
         console.error(`Error syncing key "${key}" to Supabase:`, error.message);
@@ -46,7 +46,7 @@ export async function syncAndSaveData(key: string, value: any) {
 /**
  * Loads data from Supabase app_settings table or local fallback
  */
-export async function fetchSyncedData(key: string, fallbackDefault: any) {
+export async function fetchSyncedData<T>(key: string, fallbackDefault: T): Promise<T> {
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -56,31 +56,30 @@ export async function fetchSyncedData(key: string, fallbackDefault: any) {
         .single();
 
       if (data && data.value && !error) {
-        return data.value.text !== undefined ? data.value.text : data.value;
+        const val = data.value as Record<string, unknown>;
+        return (val.text !== undefined ? val.text : val) as T;
       }
     } catch (err) {
       console.error(`Failed to fetch ${key} from Supabase:`, err);
     }
   }
 
-  // Fallback to local storage if not found in cloud
   const local = localStorage.getItem(key);
   if (local) {
     try {
-      return JSON.parse(local);
+      return JSON.parse(local) as T;
     } catch {
-      return local;
+      return local as unknown as T;
     }
   }
 
   return fallbackDefault;
 }
 
-export function getDbSyncStatus() {
+export function getDbSyncStatus(): boolean {
   return isCloudConfigured;
 }
 
-// Fallback getters for initial state
 export const getAdminHeroCopy = () => {
   const saved = localStorage.getItem('briefora_admin_hero_copy');
   if (saved) {
@@ -99,3 +98,71 @@ export const getAdminHeroCopy = () => {
 export const getAdminPrivacyPolicy = () => localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
 export const getAdminUsagePolicy = () => localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
 export const getAdminTermsOfService = () => localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
+
+export function getAdminPricing() {
+  const saved = localStorage.getItem('briefora_admin_pricing');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.map(plan => {
+          const priceMonthly = plan.priceMonthly !== undefined ? plan.priceMonthly : (plan.price !== undefined ? plan.price : 0);
+          const priceAnnual = plan.priceAnnual !== undefined ? plan.priceAnnual : Math.round(priceMonthly * 0.8);
+          return {
+            ...plan,
+            priceMonthly,
+            priceAnnual,
+            price: priceMonthly
+          };
+        });
+      }
+    } catch (e) { console.error(e); }
+  }
+  return pricingPlans.map(plan => ({
+    ...plan,
+    price: plan.priceMonthly
+  }));
+}
+
+export function getAdminFaqs() {
+  const saved = localStorage.getItem('briefora_admin_faqs');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item, index) => ({
+          id: item.id || `faq-${index}`,
+          question: item.question || item.q || '',
+          answer: item.answer || item.a || '',
+          q: item.question || item.q || '',
+          a: item.answer || item.a || '',
+        }));
+      }
+    } catch (e) { console.error(e); }
+  }
+  return faqList.map((item, index) => ({
+    id: item.id || `faq-${index}`,
+    question: item.question,
+    answer: item.answer,
+    q: item.question,
+    a: item.answer,
+  }));
+}
+
+export function getAdminTestimonials() {
+  const saved = localStorage.getItem('briefora_admin_testimonials');
+  if (saved) {
+    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+  }
+  return testimonialsList;
+}
+
+export function getSystemConfig() {
+  return {
+    maintenanceMode: localStorage.getItem('briefora_maintenance') === 'true',
+    maintenanceMsg: localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing scheduled system upgrades. We will be back online shortly.',
+    signupsEnabled: localStorage.getItem('briefora_signups_enabled') !== 'false',
+    broadcastActive: localStorage.getItem('briefora_broadcast_active') === 'true',
+    broadcastMsg: localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Release: Full interactive visual blueprint generator is live!',
+  };
+}
