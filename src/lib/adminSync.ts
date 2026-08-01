@@ -1,8 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { pricingPlans, faqList, testimonialsList } from '../data';
+import { supabase } from '../utils/supabase';
 
 export const ADMIN_SYNC_EVENT = 'briefora_admin_data_changed';
+
 
 export function notifyAdminDataChanged() {
   window.dispatchEvent(new CustomEvent(ADMIN_SYNC_EVENT));
@@ -45,7 +47,7 @@ export function getDbSyncStatus() {
   };
 }
 
-// Unified save & sync function (updates localStorage + Firestore)
+// Unified save & sync function (updates localStorage + Firestore + Supabase)
 export function syncAndSaveData(key: string, value: any) {
   const serialized = typeof value === 'string' ? value : JSON.stringify(value);
   
@@ -53,7 +55,7 @@ export function syncAndSaveData(key: string, value: any) {
   localStorage.setItem(key, serialized);
   notifyAdminDataChanged();
 
-  // If cloud mode is active, persist to Firestore in the background
+  // 1. If Firebase cloud mode is active, persist to Firestore in the background
   if (isFirebaseConnected && db) {
     // Standardize Firestore document IDs
     const docId = key
@@ -66,6 +68,18 @@ export function syncAndSaveData(key: string, value: any) {
       updatedAt: new Date().toISOString(),
     }).catch((err) => {
       console.error(`Firestore Cloud Sync failed for ${key}:`, err);
+    });
+  }
+
+  // 2. Persist to Supabase if available
+  if (supabase) {
+    const settingKey = key.replace('briefora_', '').replace('admin_', '');
+    Promise.resolve(
+      supabase
+        .from('app_settings')
+        .upsert({ key: settingKey, value: value, updated_at: new Date().toISOString() })
+    ).catch(() => {
+      // Silently catch if table not yet created in Supabase
     });
   }
 }
