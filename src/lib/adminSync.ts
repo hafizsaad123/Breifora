@@ -19,23 +19,32 @@ if (isCloudConfigured) {
 
 export const ADMIN_SYNC_EVENT = 'briefora_admin_sync_event';
 
+export function notifyAdminDataChanged() {
+  window.dispatchEvent(new Event(ADMIN_SYNC_EVENT));
+}
+
 /**
  * Saves data to Supabase app_settings table AND updates localStorage
  */
 export async function syncAndSaveData(key: string, value: unknown): Promise<void> {
   const jsonString = typeof value === 'string' ? value : JSON.stringify(value);
-  localStorage.setItem(key, jsonString);
-  window.dispatchEvent(new Event(ADMIN_SYNC_EVENT));
+  
+  // Normalize local storage key naming
+  const localStorageKey = key.startsWith('briefora_') ? key : `briefora_admin_${key}`;
+  localStorage.setItem(localStorageKey, jsonString);
+  notifyAdminDataChanged();
 
   if (supabase) {
     try {
+      const dbKey = key.replace(/^briefora_admin_/, '').replace(/^briefora_/, '');
       const payload = typeof value === 'string' ? { text: value } : (value as Record<string, unknown>);
+      
       const { error } = await supabase
         .from('app_settings')
-        .upsert({ key, value: payload, updated_at: new Date().toISOString() });
+        .upsert({ key: dbKey, value: payload, updated_at: new Date().toISOString() });
 
       if (error) {
-        console.error(`Error syncing key "${key}" to Supabase:`, error.message);
+        console.error(`Error syncing key "${dbKey}" to Supabase:`, error.message);
       }
     } catch (err) {
       console.error('Supabase sync exception:', err);
@@ -47,24 +56,32 @@ export async function syncAndSaveData(key: string, value: unknown): Promise<void
  * Loads data from Supabase app_settings table or local fallback
  */
 export async function fetchSyncedData<T>(key: string, fallbackDefault: T): Promise<T> {
+  const dbKey = key.replace(/^briefora_admin_/, '').replace(/^briefora_/, '');
+  
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from('app_settings')
         .select('value')
-        .eq('key', key)
+        .eq('key', dbKey)
         .single();
 
       if (data && data.value && !error) {
         const val = data.value as Record<string, unknown>;
-        return (val.text !== undefined ? val.text : val) as T;
+        const result = (val.text !== undefined ? val.text : val) as T;
+        
+        // Update local storage cache
+        const localStorageKey = `briefora_admin_${dbKey}`;
+        localStorage.setItem(localStorageKey, typeof result === 'string' ? result : JSON.stringify(result));
+        return result;
       }
     } catch (err) {
-      console.error(`Failed to fetch ${key} from Supabase:`, err);
+      console.error(`Failed to fetch ${dbKey} from Supabase:`, err);
     }
   }
 
-  const local = localStorage.getItem(key);
+  const localKey = `briefora_admin_${dbKey}`;
+  const local = localStorage.getItem(localKey) || localStorage.getItem(key);
   if (local) {
     try {
       return JSON.parse(local) as T;
@@ -83,7 +100,9 @@ export function getDbSyncStatus(): boolean {
 export const getAdminHeroCopy = () => {
   const saved = localStorage.getItem('briefora_admin_hero_copy');
   if (saved) {
-    try { return JSON.parse(saved); } catch {}
+    try { 
+      return JSON.parse(saved);
+    } catch {}
   }
   return {
     badge: '⚡ AI Client Discovery for Brand Designers',
@@ -116,7 +135,9 @@ export function getAdminPricing() {
           };
         });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+    }
   }
   return pricingPlans.map(plan => ({
     ...plan,
@@ -130,7 +151,7 @@ export function getAdminFaqs() {
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        return parsed.map((item, index) => ({
+        return parsed.map((item: any, index: number) => ({
           id: item.id || `faq-${index}`,
           question: item.question || item.q || '',
           answer: item.answer || item.a || '',
@@ -138,7 +159,9 @@ export function getAdminFaqs() {
           a: item.answer || item.a || '',
         }));
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+    }
   }
   return faqList.map((item, index) => ({
     id: item.id || `faq-${index}`,
@@ -152,7 +175,11 @@ export function getAdminFaqs() {
 export function getAdminTestimonials() {
   const saved = localStorage.getItem('briefora_admin_testimonials');
   if (saved) {
-    try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    try { 
+      return JSON.parse(saved);
+    } catch (e) { 
+      console.error(e);
+    }
   }
   return testimonialsList;
 }
@@ -164,5 +191,62 @@ export function getSystemConfig() {
     signupsEnabled: localStorage.getItem('briefora_signups_enabled') !== 'false',
     broadcastActive: localStorage.getItem('briefora_broadcast_active') === 'true',
     broadcastMsg: localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Release: Full interactive visual blueprint generator is live!',
+  };
+}
+
+/**
+ * Fetch a single setting key directly from Supabase app_settings table
+ */
+export async function fetchSettingFromSupabase(key: string) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', key)
+      .single();
+
+    if (error || !data) return null;
+
+    const settingKey = `briefora_admin_${key}`;
+    const serialized = typeof data.value === 'string' ? data.value : JSON.stringify(data.value);
+    localStorage.setItem(settingKey, serialized);
+    notifyAdminDataChanged();
+
+    return data.value;
+  } catch (err) {
+    console.error(`Error fetching setting ${key} from Supabase:`, err);
+    return null;
+  }
+}
+
+/**
+ * Listen live to real-time database changes in Supabase
+ */
+export function subscribeToSupabaseChanges(onUpdate: () => void) {
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel('app_settings_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'app_settings' },
+      (payload: any) => {
+        if (payload.new && payload.new.key) {
+          const settingKey = `briefora_admin_${payload.new.key}`;
+          const serialized = typeof payload.new.value === 'string' 
+            ? payload.new.value 
+            : JSON.stringify(payload.new.value);
+          
+          localStorage.setItem(settingKey, serialized);
+          notifyAdminDataChanged();
+        }
+        onUpdate();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
   };
 }

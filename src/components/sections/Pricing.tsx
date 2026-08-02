@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getAdminPricing, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
+import { 
+  getAdminPricing, 
+  fetchSettingFromSupabase, 
+  subscribeToSupabaseChanges, 
+  ADMIN_SYNC_EVENT 
+} from '../../lib/adminSync';
 import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
 import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
 import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
@@ -32,14 +37,36 @@ export default function Pricing() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // 1. Fetch live pricing directly from Supabase on component mount
+    fetchSettingFromSupabase('pricing').then((data) => {
+      if (data && Array.isArray(data)) {
+        setPlans(data);
+      }
+    });
+
+    // 2. Handle local sync events
     const handleUpdate = () => {
       setPlans(getAdminPricing());
     };
+
     window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
+
+    // 3. Subscribe to real-time database updates from Supabase
+    const unsubscribeSupabase = subscribeToSupabaseChanges(() => {
+      fetchSettingFromSupabase('pricing').then((data) => {
+        if (data && Array.isArray(data)) {
+          setPlans(data);
+        } else {
+          setPlans(getAdminPricing());
+        }
+      });
+    });
+
     return () => {
       window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
       window.removeEventListener('storage', handleUpdate);
+      unsubscribeSupabase();
     };
   }, []);
 

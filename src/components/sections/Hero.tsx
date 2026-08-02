@@ -5,21 +5,42 @@ import { useNavigate } from 'react-router-dom';
 import WorkspaceMockup from './WorkspaceMockup';
 import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
 import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
-import { getAdminHeroCopy, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
+import { 
+  getAdminHeroCopy, 
+  fetchSettingFromSupabase, 
+  subscribeToSupabaseChanges, 
+  ADMIN_SYNC_EVENT 
+} from '../../lib/adminSync';
 
 export default function Hero() {
   const navigate = useNavigate();
   const [heroCopy, setHeroCopy] = useState(getAdminHeroCopy);
 
   useEffect(() => {
+    // 1. Fetch current settings directly from Supabase on component mount
+    fetchSettingFromSupabase('hero_copy').then((data) => {
+      if (data) {
+        setHeroCopy(data);
+      }
+    });
+
+    // 2. Handle local sync events
     const handleUpdate = () => {
       setHeroCopy(getAdminHeroCopy());
     };
+
     window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
+
+    // 3. Subscribe to real-time database updates from Supabase
+    const unsubscribeSupabase = subscribeToSupabaseChanges(() => {
+      setHeroCopy(getAdminHeroCopy());
+    });
+
     return () => {
       window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
       window.removeEventListener('storage', handleUpdate);
+      unsubscribeSupabase();
     };
   }, []);
 
@@ -32,7 +53,6 @@ export default function Hero() {
 
   return (
     <section className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-24 bg-white" id="hero">
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-4xl mx-auto space-y-7">
           {/* Top Badge */}
@@ -96,11 +116,9 @@ export default function Hero() {
               </SecondaryWhiteButton>
             )}
           </motion.div>
-
-
         </div>
 
-        {/* Product Mockup View card container with continuous viewport reveal animation */}
+        {/* Product Mockup View card container */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,4 +131,3 @@ export default function Hero() {
     </section>
   );
 }
-
