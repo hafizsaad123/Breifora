@@ -11,7 +11,7 @@ import Logo from '../components/ui/Logo';
 import { pricingPlans as defaultPricingPlans, faqList as defaultFaqs, testimonialsList as defaultTestimonials } from '../data';
 import { 
   getAdminHeroCopy, getAdminPrivacyPolicy, 
-  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, getDbSyncStatus, ADMIN_SYNC_EVENT 
+  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, fetchSyncedData, ADMIN_SYNC_EVENT
 } from '../lib/adminSync';
 
 interface AdminUser {
@@ -134,30 +134,64 @@ export default function AdminPortal() {
   };
 
   const addAuditLog = (action: string, target: string) => {
-    const newLog: AuditLog = { id: `log-${Date.now()}`, action, target, timestamp: new Date().toLocaleTimeString(), admin: 'admin' };
+    const newLog: AuditLog = { 
+      id: `log-${Date.now()}`, 
+      action, 
+      target, 
+      timestamp: new Date().toLocaleTimeString(), 
+      admin: 'admin' 
+    };
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  // Sync state effects
-  useEffect(() => { syncAndSaveData('briefora_admin_users', users); }, [users]);
-  useEffect(() => { syncAndSaveData('briefora_admin_briefs', briefs); }, [briefs]);
-  useEffect(() => { syncAndSaveData('briefora_admin_pricing', pricingPlans); }, [pricingPlans]);
-  useEffect(() => { syncAndSaveData('briefora_admin_faqs', faqs); }, [faqs]);
-  useEffect(() => { syncAndSaveData('briefora_admin_testimonials', testimonials); }, [testimonials]);
-  useEffect(() => { syncAndSaveData('briefora_admin_hero_copy', heroCopy); }, [heroCopy]);
+  // Initial Sync from Supabase Cloud on mount
   useEffect(() => {
-    syncAndSaveData('briefora_maintenance', String(maintenanceMode));
-    syncAndSaveData('briefora_maintenance_msg', maintenanceMsg);
-  }, [maintenanceMode, maintenanceMsg]);
-  useEffect(() => { syncAndSaveData('briefora_signups_enabled', String(signupsAllowed)); }, [signupsAllowed]);
-  useEffect(() => {
-    syncAndSaveData('briefora_broadcast_msg', announcement);
-    syncAndSaveData('briefora_broadcast_active', String(announcementActive));
-  }, [announcement, announcementActive]);
-  useEffect(() => { syncAndSaveData('briefora_admin_logs', auditLogs); }, [auditLogs]);
-  useEffect(() => { syncAndSaveData('briefora_privacy_policy', privacyPolicyText); }, [privacyPolicyText]);
-  useEffect(() => { syncAndSaveData('briefora_usage_policy', usagePolicyText); }, [usagePolicyText]);
-  useEffect(() => { syncAndSaveData('briefora_terms_of_service', termsOfServiceText); }, [termsOfServiceText]);
+    async function loadCloudSettings() {
+      const fetchedPricing = await fetchSyncedData('pricing', pricingPlans);
+      if (fetchedPricing) setPricingPlans(fetchedPricing);
+
+      const fetchedHero = await fetchSyncedData('hero_copy', heroCopy);
+      if (fetchedHero) setHeroCopy(fetchedHero);
+
+      const fetchedFaqs = await fetchSyncedData('faqs', faqs);
+      if (fetchedFaqs) setFaqs(fetchedFaqs);
+    }
+    loadCloudSettings();
+  }, []);
+
+  // Dedicated Save Handlers
+  const handleSavePricing = async () => {
+    await syncAndSaveData('pricing', pricingPlans);
+    await syncAndSaveData('briefora_admin_pricing', pricingPlans);
+    addAuditLog('UPDATE_PRICING', 'Pricing Plans');
+    showToast('Pricing Plans Saved & Synced to Supabase!');
+  };
+
+  const handleSaveHeroCopy = async () => {
+    await syncAndSaveData('hero_copy', heroCopy);
+    await syncAndSaveData('briefora_admin_hero_copy', heroCopy);
+    addAuditLog('UPDATE_HERO_COPY', 'Hero Section');
+    showToast('Hero Copy Saved & Synced!');
+  };
+
+  const handleSaveFaqs = async (updatedFaqs: any[]) => {
+    setFaqs(updatedFaqs);
+    await syncAndSaveData('faqs', updatedFaqs);
+    await syncAndSaveData('briefora_admin_faqs', updatedFaqs);
+    showToast('FAQ Data Synced!');
+  };
+
+  const handleSaveLegal = async () => {
+    await syncAndSaveData('privacy_policy', privacyPolicyText);
+    await syncAndSaveData('usage_policy', usagePolicyText);
+    await syncAndSaveData('terms_of_service', termsOfServiceText);
+    showToast('Legal Documents Synced!');
+  };
+
+  // Sync users/briefs to local storage
+  useEffect(() => { localStorage.setItem('briefora_admin_users', JSON.stringify(users)); }, [users]);
+  useEffect(() => { localStorage.setItem('briefora_admin_briefs', JSON.stringify(briefs)); }, [briefs]);
+  useEffect(() => { localStorage.setItem('briefora_admin_logs', JSON.stringify(auditLogs)); }, [auditLogs]);
 
   // Auth Handlers
   const handleLogin = (e: React.FormEvent) => {
@@ -213,20 +247,20 @@ export default function AdminPortal() {
     showToast('Brief removed');
   };
 
-  const handleAddFaq = (e: React.FormEvent) => {
+  const handleAddFaq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFaqQuestion || !newFaqAnswer) return;
-    const newFaq = { q: newFaqQuestion, a: newFaqAnswer };
-    setFaqs([...faqs, newFaq]);
+    const newFaq = { q: newFaqQuestion, a: newFaqAnswer, question: newFaqQuestion, answer: newFaqAnswer };
+    const updated = [...faqs, newFaq];
+    await handleSaveFaqs(updated);
     setIsAddFaqOpen(false);
     setNewFaqQuestion('');
     setNewFaqAnswer('');
-    showToast('FAQ item added!');
   };
 
-  const handleDeleteFaq = (idx: number) => {
-    setFaqs(faqs.filter((_, i) => i !== idx));
-    showToast('FAQ deleted');
+  const handleDeleteFaq = async (idx: number) => {
+    const updated = faqs.filter((_, i) => i !== idx);
+    await handleSaveFaqs(updated);
   };
 
   const filteredUsers = users.filter((u) => {
@@ -477,7 +511,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">Hero Section Copy Editor</h3>
-              <button onClick={() => showToast('Hero Copy Saved & Synced!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={handleSaveHeroCopy} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
                 <Save className="w-4 h-4" /> Save Copy
               </button>
             </div>
@@ -547,7 +581,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">Pricing Tier Management</h3>
-              <button onClick={() => showToast('Pricing Plans Updated!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={handleSavePricing} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer hover:bg-brand-primary/90">
                 <Save className="w-4 h-4" /> Save Pricing
               </button>
             </div>
@@ -562,10 +596,28 @@ export default function AdminPortal() {
                     <label className="block text-[10px] font-bold uppercase text-slate-400">Monthly Price ($)</label>
                     <input
                       type="number"
-                      value={plan.price}
+                      value={plan.priceMonthly !== undefined ? plan.priceMonthly : (plan.price !== undefined ? plan.price : 0)}
                       onChange={(e) => {
                         const updated = [...pricingPlans];
-                        updated[idx].price = Number(e.target.value);
+                        const val = Number(e.target.value);
+                        updated[idx].priceMonthly = val;
+                        updated[idx].price = val;
+                        if (!updated[idx].priceAnnual) {
+                          updated[idx].priceAnnual = Math.round(val * 0.8);
+                        }
+                        setPricingPlans(updated);
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400">Annual Price ($)</label>
+                    <input
+                      type="number"
+                      value={plan.priceAnnual !== undefined ? plan.priceAnnual : 0}
+                      onChange={(e) => {
+                        const updated = [...pricingPlans];
+                        updated[idx].priceAnnual = Number(e.target.value);
                         setPricingPlans(updated);
                       }}
                       className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold mt-1"
@@ -575,9 +627,10 @@ export default function AdminPortal() {
                     <label className="block text-[10px] font-bold uppercase text-slate-400">Description</label>
                     <input
                       type="text"
-                      value={plan.desc || plan.description || ''}
+                      value={plan.description || plan.desc || ''}
                       onChange={(e) => {
                         const updated = [...pricingPlans];
+                        updated[idx].description = e.target.value;
                         updated[idx].desc = e.target.value;
                         setPricingPlans(updated);
                       }}
@@ -603,8 +656,8 @@ export default function AdminPortal() {
               {faqs.map((faq, idx) => (
                 <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-start gap-4">
                   <div className="space-y-1">
-                    <div className="font-bold text-xs text-slate-900">Q: {faq.q}</div>
-                    <div className="text-xs text-slate-600">A: {faq.a}</div>
+                    <div className="font-bold text-xs text-slate-900">Q: {faq.question || faq.q}</div>
+                    <div className="text-xs text-slate-600">A: {faq.answer || faq.a}</div>
                   </div>
                   <button onClick={() => handleDeleteFaq(idx)} className="text-slate-400 hover:text-rose-600 p-1">
                     <Trash2 className="w-4 h-4" />
@@ -674,6 +727,7 @@ export default function AdminPortal() {
                   checked={maintenanceMode}
                   onChange={(e) => {
                     setMaintenanceMode(e.target.checked);
+                    syncAndSaveData('maintenance', String(e.target.checked));
                     showToast(e.target.checked ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled');
                   }}
                   className="w-5 h-5 accent-brand-primary"
@@ -690,6 +744,7 @@ export default function AdminPortal() {
                   checked={signupsAllowed}
                   onChange={(e) => {
                     setSignupsAllowed(e.target.checked);
+                    syncAndSaveData('signups_enabled', String(e.target.checked));
                     showToast(e.target.checked ? 'Signups Allowed' : 'Signups Disabled');
                   }}
                   className="w-5 h-5 accent-brand-primary"
@@ -707,6 +762,7 @@ export default function AdminPortal() {
                     checked={announcementActive}
                     onChange={(e) => {
                       setAnnouncementActive(e.target.checked);
+                      syncAndSaveData('broadcast_active', String(e.target.checked));
                       showToast(e.target.checked ? 'Banner Activated' : 'Banner Deactivated');
                     }}
                     className="w-5 h-5 accent-brand-primary"
@@ -715,7 +771,10 @@ export default function AdminPortal() {
                 <input
                   type="text"
                   value={announcement}
-                  onChange={(e) => setAnnouncement(e.target.value)}
+                  onChange={(e) => {
+                    setAnnouncement(e.target.value);
+                    syncAndSaveData('broadcast_msg', e.target.value);
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium"
                 />
               </div>
@@ -728,7 +787,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">Legal Document Editors</h3>
-              <button onClick={() => showToast('Legal documents updated!')} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={handleSaveLegal} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
                 <Save className="w-4 h-4" /> Save Legal Copy
               </button>
             </div>
