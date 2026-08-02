@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import Logo from '../components/ui/Logo';
+import { useAppSettings } from '../context/AppSettingsContext';
 import dashboardImg from '../assets/images/dashboard.png';
 import bentocard01 from '../assets/images/bentocard01.png';
 import bentocard02 from '../assets/images/bentocard02.png';
@@ -13,6 +14,7 @@ import howitworkscard02 from '../assets/images/howitworkscard02.png';
 import howitworkscard03 from '../assets/images/howitworkscard03.png';
 
 export default function Landing() {
+  const { settings } = useAppSettings();
   // Mobile menu open state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -200,18 +202,18 @@ export default function Landing() {
             <svg className="w-3.5 h-3.5 fill-current text-[#2516FF]" viewBox="0 0 24 24">
               <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
             </svg>
-            <span>AI Client Discovery for Brand Designers</span>
+            <span>{settings.hero_copy?.badge || 'AI Client Discovery for Brand Designers'}</span>
           </motion.div>
 
           {/* Title */}
           <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-slate-900 mb-4 leading-[1.25]">
-            Turn Vague Client Ideas Into<br className="hidden md:block" />{' '}
-            <span className="text-[#2516FF]">Clear Brand Strategy</span>
+            {settings.hero_copy?.title || 'Turn Vague Client Ideas Into'}<br className="hidden md:block" />{' '}
+            <span className="text-[#2516FF]">{settings.hero_copy?.highlightTitle || 'Clear Brand Strategy'}</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto mb-10">
-            Stop chasing confusing feedback and endless revisions. Briefora transforms messy client thoughts into strategic creative direction before the first concept is designed.
+            {settings.hero_copy?.subtitle || 'Stop chasing confusing feedback and endless revisions. Briefora transforms messy client thoughts into strategic creative direction before the first concept is designed.'}
           </p>
 
           {/* Pill CTA Buttons */}
@@ -220,13 +222,13 @@ export default function Landing() {
               to="/signup"
               className="w-full sm:w-auto bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
             >
-              Start for free
+              {settings.hero_copy?.primaryCta || 'Start for free'}
             </Link>
             <a
               href="#features"
               className="w-full sm:w-auto bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
             >
-              See How It Works
+              {settings.hero_copy?.secondaryCta || 'See How It Works'}
             </a>
           </div>
 
@@ -731,192 +733,111 @@ export default function Landing() {
 
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-4">
-            {/* Free Plan */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25 }}
-              className="bg-slate-50/60 rounded-3xl border border-slate-200/80 p-8 flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-lg"
-            >
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Free</h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-6">
-                  For freelance designers getting started. Your first polished brief.
-                </p>
+            {(settings.pricing || []).map((plan) => {
+              const isPro = plan.name.toLowerCase() === 'pro';
+              const price = isYearly 
+                ? (plan.priceAnnual !== undefined ? plan.priceAnnual : Math.round(plan.priceMonthly * 0.8)) 
+                : plan.priceMonthly;
+              const formattedPrice = price === 0 || price === '0' || price === 'Free' ? 'Free' : `$${price}`;
+              
+              if (isPro) {
+                return (
+                  <motion.div 
+                    key={plan.id}
+                    whileHover={{ y: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="bg-[#2516FF] rounded-3xl p-[1.5px] flex flex-col justify-between transition-all lg:-translate-y-4 hover:shadow-2xl hover:shadow-[#2516FF]/20"
+                  >
+                    <div className="text-center py-2 text-white font-bold text-xs tracking-wider uppercase">
+                      Most Popular
+                    </div>
 
-                <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-4xl font-extrabold text-slate-900">Free</span>
-                  <span className="text-sm text-slate-500 font-medium">/ forever</span>
-                </div>
+                    <div className="bg-white rounded-[22.5px] p-7 h-full flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                        <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-6">
+                          {plan.description}
+                        </p>
 
-                <ul className="space-y-4 text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-8">
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>1 Active link to test with a real client</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>10 Visual prompts that replace long discovery calls</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Zero-login client access to completely eliminate friction</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Fully mobile-responsive layout for on-the-go clients</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Instant clean layout view of submitted raw inputs</span>
-                  </li>
-                </ul>
-              </div>
+                        <div className="flex items-baseline gap-1 mb-8">
+                          <span className="text-4xl font-extrabold text-slate-900">
+                            {formattedPrice}
+                          </span>
+                          {formattedPrice !== 'Free' && (
+                            <span className="text-sm text-slate-500 font-medium">
+                              {isYearly ? '/ month (billed yearly)' : '/ month'}
+                            </span>
+                          )}
+                        </div>
 
-              <Link
-                to="/signup"
-                className="w-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
-              >
-                Start for free
-              </Link>
-            </motion.div>
+                        <ul className="space-y-4 text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-8">
+                          {(plan.features || []).map((feature: string, idx: number) => (
+                            <li key={idx} className="flex items-center gap-3">
+                              <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                              </svg>
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-            {/* Pro Plan */}
-            <motion.div 
-              whileHover={{ y: -20 }}
-              transition={{ duration: 0.25 }}
-              className="bg-[#2516FF] rounded-3xl p-[1.5px] flex flex-col justify-between transition-all lg:-translate-y-4 hover:shadow-2xl hover:shadow-[#2516FF]/20"
-            >
-              <div className="text-center py-2 text-white font-bold text-xs tracking-wider uppercase">
-                Most Popular
-              </div>
+                      <Link
+                        to="/signup"
+                        className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
+                      >
+                        {plan.ctaText || 'Start with Pro'}
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              }
 
-              <div className="bg-white rounded-[22.5px] p-7 h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Pro</h3>
-                  <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-6">
-                    For active freelancers who need unlimited strategic blueprints and custom branding.
-                  </p>
+              return (
+                <motion.div 
+                  key={plan.id}
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.25 }}
+                  className="bg-slate-50/60 rounded-3xl border border-slate-200/80 p-8 flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-lg"
+                >
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                    <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-6">
+                      {plan.description}
+                    </p>
 
-                  <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-4xl font-extrabold text-slate-900">
-                      {isYearly ? '$6' : '$9'}
-                    </span>
-                    <span className="text-sm text-slate-500 font-medium">
-                      {isYearly ? '/ month (billed yearly)' : '/ month'}
-                    </span>
+                    <div className="flex items-baseline gap-1 mb-8">
+                      <span className="text-4xl font-extrabold text-slate-900">{formattedPrice}</span>
+                      {formattedPrice !== 'Free' ? (
+                        <span className="text-sm text-slate-500 font-medium">
+                          {isYearly ? '/ month (billed yearly)' : '/ month'}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500 font-medium">/ forever</span>
+                      )}
+                    </div>
+
+                    <ul className="space-y-4 text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-8">
+                      {(plan.features || []).map((feature: string, idx: number) => (
+                        <li key={idx} className="flex items-center gap-3">
+                          <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <ul className="space-y-4 text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-8">
-                    <li className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Unlimited active links so you never delete past briefs</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Instant AI blueprints extracted from raw client notes</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Premium PDF exports to anchor your proposals</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>Custom studio branding to display your logo on links</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <span>AI translation engine for complex visual adjectives</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <Link
-                  to="/signup"
-                  className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
-                >
-                  Start with Pro
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Studio Plan */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25 }}
-              className="bg-slate-50/60 rounded-3xl border border-slate-200/80 p-8 flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-lg"
-            >
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Studio</h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-6">
-                  For boutique agencies and design teams demanding complete white-label control.
-                </p>
-
-                <div className="flex items-baseline gap-2 mb-8">
-                  <span className="text-3xl font-extrabold text-slate-900">Custom</span>
-                  <span className="text-sm text-slate-500 font-medium">pricing</span>
-                </div>
-
-                <ul className="space-y-4 text-sm md:text-base font-normal text-slate-500 leading-relaxed mb-8">
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Remove all Briefora branding from client links</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Custom domain hosting to use your own studio URL</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Add up to 3 team members to collaborate on briefs</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Advanced client analytics to track interaction time</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <svg className="w-4 h-4 text-[#2516FF] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Dedicated VIP priority support for urgent projects</span>
-                  </li>
-                </ul>
-              </div>
-
-              <a
-                href="#faq"
-                className="w-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
-              >
-                Talk to Support
-              </a>
-            </motion.div>
+                  <Link
+                    to="/signup"
+                    className="w-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
+                  >
+                    {plan.ctaText || 'Start for free'}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -944,220 +865,50 @@ export default function Landing() {
 
           {/* FAQ List Container */}
           <div className="space-y-4">
-            {/* FAQ Item 1 */}
-            <motion.div 
-              layout
-              className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === 0 ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(0)}
-                className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
+            {(settings.faqs || []).map((faq, index) => (
+              <motion.div 
+                key={index}
+                layout
+                className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === index ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
               >
-                <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
-                  Do my clients need to create an account to fill out a brief?
-                </span>
-                <motion.span 
-                  animate={{ rotate: openFaqIndex === 0 ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
+                <button
+                  type="button"
+                  onClick={() => toggleFaq(index)}
+                  className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
                 >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === 0 ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
-                  </svg>
-                </motion.span>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaqIndex === 0 && (
-                  <motion.div
-                    key="faq-0"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
+                  <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
+                    {faq.question}
+                  </span>
+                  <motion.span 
+                    animate={{ rotate: openFaqIndex === index ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
                   >
-                    <div className="pt-4 mt-2 border-t border-slate-100/80">
-                      <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                        Never. We completely eliminated friction. Your clients just click your custom workspace link, complete the beautiful interactive discovery flow, and hit submit. Zero logins, zero passwords, and zero excuses for delay.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* FAQ Item 2 */}
-            <motion.div 
-              layout
-              className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === 1 ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(1)}
-                className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
-              >
-                <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
-                  Can I completely remove Briefora branding from client links?
-                </span>
-                <motion.span 
-                  animate={{ rotate: openFaqIndex === 1 ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === 1 ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
-                  </svg>
-                </motion.span>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaqIndex === 1 && (
-                  <motion.div
-                    key="faq-1"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-4 mt-2 border-t border-slate-100/80">
-                      <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                        Yes! White-labeling and complete brand removal are available on our Pro and Studio plans. You can replace Briefora branding with your own studio logo, custom colors, and even run briefs on your custom domain so client links look 100% like your native in-house tool.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* FAQ Item 3 */}
-            <motion.div 
-              layout
-              className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === 2 ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(2)}
-                className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
-              >
-                <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
-                  What exactly happens when I hit my active link limit on Free?
-                </span>
-                <motion.span 
-                  animate={{ rotate: openFaqIndex === 2 ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === 2 ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
-                  </svg>
-                </motion.span>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaqIndex === 2 && (
-                  <motion.div
-                    key="faq-2"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-4 mt-2 border-t border-slate-100/80">
-                      <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                        Your existing active briefs will remain live, fully accessible, and functional for your clients. However, you won't be able to generate new live brief links or accept new client submissions until you either archive older active links or upgrade to a paid plan for unlimited active links.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* FAQ Item 4 */}
-            <motion.div 
-              layout
-              className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === 3 ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(3)}
-                className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
-              >
-                <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
-                  Does Briefora integrate or replace my current design tools?
-                </span>
-                <motion.span 
-                  animate={{ rotate: openFaqIndex === 3 ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === 3 ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
-                  </svg>
-                </motion.span>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaqIndex === 3 && (
-                  <motion.div
-                    key="faq-3"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-4 mt-2 border-t border-slate-100/80">
-                      <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                        Briefora doesn't replace design software like Figma, Adobe XD, or Framer—it sits right before them in your workflow. It replaces messy intake forms, lengthy back-and-forth emails, and unbilled discovery calls by turning vague client requests into structured, actionable visual blueprints before you ever open your canvas.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* FAQ Item 5 */}
-            <motion.div 
-              layout
-              className={`faq-item bg-white border rounded-2xl p-6 transition-colors duration-200 ${openFaqIndex === 4 ? 'border-[#2516FF]/40 shadow-xs' : 'border-slate-200/80 hover:border-slate-300'}`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(4)}
-                className="w-full flex items-center justify-between text-left focus:outline-none gap-4 cursor-pointer"
-              >
-                <span className="text-base md:text-lg font-medium text-slate-900 tracking-tight">
-                  Is there a discount if I choose to pay annually instead of monthly?
-                </span>
-                <motion.span 
-                  animate={{ rotate: openFaqIndex === 4 ? 180 : 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="faq-icon-btn w-6 h-6 rounded-full bg-[#2516FF] text-white flex items-center justify-center shrink-0"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === 4 ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
-                  </svg>
-                </motion.span>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaqIndex === 4 && (
-                  <motion.div
-                    key="faq-4"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-4 mt-2 border-t border-slate-100/80">
-                      <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                        Yes! When you switch to annual billing, your Pro plan drops from $9/month to just $6/month (billed annually). That saves you 33% overall—which is effectively getting 4 months completely free every year. Studio plans enjoy a similar annual discount.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={openFaqIndex === index ? "M20 12H4" : "M12 4v16m8-8H4"}></path>
+                    </svg>
+                  </motion.span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {openFaqIndex === index && (
+                    <motion.div
+                      key={`faq-${index}`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-4 mt-2 border-t border-slate-100/80">
+                        <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

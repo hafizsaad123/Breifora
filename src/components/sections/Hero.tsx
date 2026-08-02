@@ -1,48 +1,15 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import WorkspaceMockup from './WorkspaceMockup';
 import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
 import { SecondaryWhiteButton } from '../ui/SecondaryWhiteButton';
-import { 
-  getAdminHeroCopy, 
-  fetchSettingFromSupabase, 
-  subscribeToSupabaseChanges, 
-  ADMIN_SYNC_EVENT 
-} from '../../lib/adminSync';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 export default function Hero() {
   const navigate = useNavigate();
-  const [heroCopy, setHeroCopy] = useState(getAdminHeroCopy);
-
-  useEffect(() => {
-    // 1. Fetch current settings directly from Supabase on component mount
-    fetchSettingFromSupabase('hero_copy').then((data) => {
-      if (data) {
-        setHeroCopy(data);
-      }
-    });
-
-    // 2. Handle local sync events
-    const handleUpdate = () => {
-      setHeroCopy(getAdminHeroCopy());
-    };
-
-    window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    // 3. Subscribe to real-time database updates from Supabase
-    const unsubscribeSupabase = subscribeToSupabaseChanges(() => {
-      setHeroCopy(getAdminHeroCopy());
-    });
-
-    return () => {
-      window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-      unsubscribeSupabase();
-    };
-  }, []);
+  const { settings } = useAppSettings();
+  const heroCopy = settings.hero_copy;
 
   const introTransition = {
     type: "spring" as const,

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { getAdminTestimonials, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
 import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 const G2Badge = () => (
   <div className="flex items-center gap-1.5 bg-red-50/70 border border-red-100/80 rounded-lg px-2 py-0.5 shrink-0 shadow-xs">
@@ -15,19 +15,8 @@ const G2Badge = () => (
 );
 
 export default function Testimonials() {
-  const [testimonials, setTestimonials] = useState(getAdminTestimonials);
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      setTestimonials(getAdminTestimonials());
-    };
-    window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-    return () => {
-      window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-    };
-  }, []);
+  const { settings } = useAppSettings();
+  const testimonials = settings.testimonials || [];
 
   const half = Math.ceil(testimonials.length / 2);
   const row1 = testimonials.slice(0, half);

@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Info, Clock } from 'lucide-react';
-import { getAdminUsagePolicy, ADMIN_SYNC_EVENT } from '../lib/adminSync';
+import { useAppSettings } from '../context/AppSettingsContext';
 import Logo from '../components/ui/Logo';
 
 export default function UsagePolicy() {
   const navigate = useNavigate();
-  const [content, setContent] = useState(getAdminUsagePolicy());
+  const { settings } = useAppSettings();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const handleSync = () => {
-      setContent(getAdminUsagePolicy());
-    };
-    window.addEventListener(ADMIN_SYNC_EVENT, handleSync);
-    return () => window.removeEventListener(ADMIN_SYNC_EVENT, handleSync);
   }, []);
 
   return (
@@ -70,7 +65,7 @@ export default function UsagePolicy() {
               [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-2 [&>ul]:text-sm [&>ul]:sm:text-base [&>ul]:text-slate-600
               [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-2 [&>ol]:text-sm [&>ol]:sm:text-base [&>ol]:text-slate-600
               [&>h1]:hidden"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: settings.usage_policy }}
           />
         </div>
       </main>

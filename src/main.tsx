@@ -8,27 +8,30 @@ import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import UsagePolicy from './pages/UsagePolicy.tsx';
 import TermsOfService from './pages/TermsOfService.tsx';
 import { ErrorBoundary } from './components/ui/ErrorBoundary.tsx';
+import { AppSettingsProvider } from './context/AppSettingsContext.tsx';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/signup" element={<Signup defaultMode="signup" />} />
-          <Route path="/login" element={<Signup defaultMode="login" />} />
-          <Route path="/forgotpassword" element={<Signup defaultMode="forgot" />} />
-          <Route path="/resetpassword" element={<Signup defaultMode="updatepassword" />} />
-          <Route path="/onboarding" element={<Signup defaultMode="onboarding" />} />
-          <Route path="/home" element={<Signup defaultMode="dashboard" />} />
-          <Route path="/admin" element={<AdminPortal />} />
-          <Route path="/privacypolicy" element={<PrivacyPolicy />} />
-          <Route path="/usagepolicy" element={<UsagePolicy />} />
-          <Route path="/termsofservice" element={<TermsOfService />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <AppSettingsProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/signup" element={<Signup defaultMode="signup" />} />
+            <Route path="/login" element={<Signup defaultMode="login" />} />
+            <Route path="/forgotpassword" element={<Signup defaultMode="forgot" />} />
+            <Route path="/resetpassword" element={<Signup defaultMode="updatepassword" />} />
+            <Route path="/onboarding" element={<Signup defaultMode="onboarding" />} />
+            <Route path="/home" element={<Signup defaultMode="dashboard" />} />
+            <Route path="/admin" element={<AdminPortal />} />
+            <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+            <Route path="/usagepolicy" element={<UsagePolicy />} />
+            <Route path="/termsofservice" element={<TermsOfService />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AppSettingsProvider>
     </ErrorBoundary>
   </StrictMode>,
 );

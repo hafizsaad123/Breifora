@@ -1,24 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Minus } from 'lucide-react';
-import { getAdminFaqs, ADMIN_SYNC_EVENT } from '../../lib/adminSync';
 import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 export default function FAQ() {
-  const [faqs, setFaqs] = useState(getAdminFaqs);
+  const { settings } = useAppSettings();
+  const faqs = settings.faqs || [];
   const [openId, setOpenId] = useState<string | null>('faq-1');
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      setFaqs(getAdminFaqs());
-    };
-    window.addEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-    return () => {
-      window.removeEventListener(ADMIN_SYNC_EVENT, handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-    };
-  }, []);
 
   const toggleAccordion = (id: string) => {
     if (openId === id) {

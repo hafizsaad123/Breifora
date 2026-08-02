@@ -142,9 +142,9 @@ export function getAdminPricing() {
   }
   return pricingPlans.map(plan => ({
     ...plan,
-    priceMonthly: plan.priceMonthly ?? plan.price ?? 0,
-    priceAnnual: plan.priceAnnual ?? Math.round((plan.priceMonthly ?? plan.price ?? 0) * 0.8),
-    price: plan.priceMonthly ?? plan.price ?? 0
+    priceMonthly: plan.priceMonthly ?? 0,
+    priceAnnual: plan.priceAnnual ?? Math.round((plan.priceMonthly ?? 0) * 0.8),
+    price: plan.priceMonthly ?? 0
   }));
 }
 
