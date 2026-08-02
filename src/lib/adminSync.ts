@@ -254,3 +254,4 @@ export function subscribeToSupabaseChanges(onUpdate: () => void) {
     supabase.removeChannel(channel);
   };
 }
+
