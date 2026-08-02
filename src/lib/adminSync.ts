@@ -30,13 +30,14 @@ export async function syncAndSaveData(key: string, value: unknown): Promise<void
   const jsonString = typeof value === 'string' ? value : JSON.stringify(value);
   
   // Normalize local storage key naming
-  const localStorageKey = key.startsWith('briefora_') ? key : `briefora_admin_${key}`;
+  const dbKey = key.replace(/^briefora_admin_/, '').replace(/^briefora_/, '');
+  const localStorageKey = `briefora_admin_${dbKey}`;
+  
   localStorage.setItem(localStorageKey, jsonString);
   notifyAdminDataChanged();
 
   if (supabase) {
     try {
-      const dbKey = key.replace(/^briefora_admin_/, '').replace(/^briefora_/, '');
       const payload = typeof value === 'string' ? { text: value } : (value as Record<string, unknown>);
       
       const { error } = await supabase
@@ -114,9 +115,9 @@ export const getAdminHeroCopy = () => {
   };
 };
 
-export const getAdminPrivacyPolicy = () => localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
-export const getAdminUsagePolicy = () => localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
-export const getAdminTermsOfService = () => localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
+export const getAdminPrivacyPolicy = () => localStorage.getItem('briefora_admin_privacy_policy') || localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
+export const getAdminUsagePolicy = () => localStorage.getItem('briefora_admin_usage_policy') || localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
+export const getAdminTermsOfService = () => localStorage.getItem('briefora_admin_terms_of_service') || localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
 
 export function getAdminPricing() {
   const saved = localStorage.getItem('briefora_admin_pricing');
@@ -141,7 +142,9 @@ export function getAdminPricing() {
   }
   return pricingPlans.map(plan => ({
     ...plan,
-    price: plan.priceMonthly
+    priceMonthly: plan.priceMonthly ?? plan.price ?? 0,
+    priceAnnual: plan.priceAnnual ?? Math.round((plan.priceMonthly ?? plan.price ?? 0) * 0.8),
+    price: plan.priceMonthly ?? plan.price ?? 0
   }));
 }
 
@@ -186,11 +189,11 @@ export function getAdminTestimonials() {
 
 export function getSystemConfig() {
   return {
-    maintenanceMode: localStorage.getItem('briefora_maintenance') === 'true',
-    maintenanceMsg: localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing scheduled system upgrades. We will be back online shortly.',
-    signupsEnabled: localStorage.getItem('briefora_signups_enabled') !== 'false',
-    broadcastActive: localStorage.getItem('briefora_broadcast_active') === 'true',
-    broadcastMsg: localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Release: Full interactive visual blueprint generator is live!',
+    maintenanceMode: localStorage.getItem('briefora_admin_maintenance') === 'true' || localStorage.getItem('briefora_maintenance') === 'true',
+    maintenanceMsg: localStorage.getItem('briefora_admin_maintenance_msg') || localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing scheduled system upgrades. We will be back online shortly.',
+    signupsEnabled: localStorage.getItem('briefora_admin_signups_enabled') !== 'false',
+    broadcastActive: localStorage.getItem('briefora_admin_broadcast_active') === 'true' || localStorage.getItem('briefora_broadcast_active') === 'true',
+    broadcastMsg: localStorage.getItem('briefora_admin_broadcast_msg') || localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Release: Full interactive visual blueprint generator is live!',
   };
 }
 
@@ -200,15 +203,16 @@ export function getSystemConfig() {
 export async function fetchSettingFromSupabase(key: string) {
   if (!supabase) return null;
   try {
+    const dbKey = key.replace(/^briefora_admin_/, '').replace(/^briefora_/, '');
     const { data, error } = await supabase
       .from('app_settings')
       .select('value')
-      .eq('key', key)
+      .eq('key', dbKey)
       .single();
 
     if (error || !data) return null;
 
-    const settingKey = `briefora_admin_${key}`;
+    const settingKey = `briefora_admin_${dbKey}`;
     const serialized = typeof data.value === 'string' ? data.value : JSON.stringify(data.value);
     localStorage.setItem(settingKey, serialized);
     notifyAdminDataChanged();

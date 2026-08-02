@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ShieldCheck, Lock, User, Users, Search, Plus, Trash2, 
-  CheckCircle, AlertTriangle, Activity, Settings, DollarSign, 
-  FileText, LogOut, Key, RefreshCw, Sliders, Layers, X, 
-  ChevronRight, CreditCard, Save, Globe, ExternalLink, Zap, Edit3
+  ShieldCheck, Lock, User, Users, Plus, Trash2, 
+  CheckCircle, AlertTriangle, Activity, Settings, 
+  FileText, LogOut, Key, RefreshCw, Layers, X, 
+  ChevronRight, CreditCard, Save, Globe, ExternalLink
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { pricingPlans as defaultPricingPlans, faqList as defaultFaqs, testimonialsList as defaultTestimonials } from '../data';
 import { 
   getAdminHeroCopy, getAdminPrivacyPolicy, 
-  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, fetchSyncedData, ADMIN_SYNC_EVENT
+  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, fetchSyncedData
 } from '../lib/adminSync';
 
 interface AdminUser {
@@ -59,14 +59,14 @@ export default function AdminPortal() {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'briefs' | 'pricing' | 'cms' | 'hero' | 'system' | 'legal'>('overview');
 
   // Legal Policies
-  const [privacyPolicyText, setPrivacyPolicyText] = useState<string>(() => localStorage.getItem('briefora_privacy_policy') || getAdminPrivacyPolicy());
-  const [usagePolicyText, setUsagePolicyText] = useState<string>(() => localStorage.getItem('briefora_usage_policy') || getAdminUsagePolicy());
-  const [termsOfServiceText, setTermsOfServiceText] = useState<string>(() => localStorage.getItem('briefora_terms_of_service') || getAdminTermsOfService());
+  const [privacyPolicyText, setPrivacyPolicyText] = useState<string>(() => localStorage.getItem('briefora_admin_privacy_policy') || localStorage.getItem('briefora_privacy_policy') || getAdminPrivacyPolicy());
+  const [usagePolicyText, setUsagePolicyText] = useState<string>(() => localStorage.getItem('briefora_admin_usage_policy') || localStorage.getItem('briefora_usage_policy') || getAdminUsagePolicy());
+  const [termsOfServiceText, setTermsOfServiceText] = useState<string>(() => localStorage.getItem('briefora_admin_terms_of_service') || localStorage.getItem('briefora_terms_of_service') || getAdminTermsOfService());
 
   // Search/Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [userPlanFilter, setUserPlanFilter] = useState<string>('All');
-  const [userStatusFilter, setUserStatusFilter] = useState<string>('All');
+  const [userPlanFilter] = useState<string>('All');
+  const [userStatusFilter] = useState<string>('All');
 
   // Users
   const [users, setUsers] = useState<AdminUser[]>(() => {
@@ -101,15 +101,14 @@ export default function AdminPortal() {
   // Dynamic CMS & Configs
   const [pricingPlans, setPricingPlans] = useState<any[]>(() => JSON.parse(localStorage.getItem('briefora_admin_pricing') || 'null') || defaultPricingPlans);
   const [faqs, setFaqs] = useState<any[]>(() => JSON.parse(localStorage.getItem('briefora_admin_faqs') || 'null') || defaultFaqs);
-  const [testimonials, setTestimonials] = useState<any[]>(() => JSON.parse(localStorage.getItem('briefora_admin_testimonials') || 'null') || defaultTestimonials);
+  const [, setTestimonials] = useState<any[]>(() => JSON.parse(localStorage.getItem('briefora_admin_testimonials') || 'null') || defaultTestimonials);
   const [heroCopy, setHeroCopy] = useState(getAdminHeroCopy);
 
   // System Toggles
-  const [maintenanceMode, setMaintenanceMode] = useState<boolean>(() => localStorage.getItem('briefora_maintenance') === 'true');
-  const [maintenanceMsg, setMaintenanceMsg] = useState<string>(() => localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing maintenance.');
-  const [signupsAllowed, setSignupsAllowed] = useState<boolean>(() => localStorage.getItem('briefora_signups_enabled') !== 'false');
-  const [announcement, setAnnouncement] = useState<string>(() => localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Live!');
-  const [announcementActive, setAnnouncementActive] = useState<boolean>(() => localStorage.getItem('briefora_broadcast_active') === 'true');
+  const [maintenanceMode, setMaintenanceMode] = useState<boolean>(() => localStorage.getItem('briefora_admin_maintenance') === 'true' || localStorage.getItem('briefora_maintenance') === 'true');
+  const [signupsAllowed, setSignupsAllowed] = useState<boolean>(() => localStorage.getItem('briefora_admin_signups_enabled') !== 'false');
+  const [announcement, setAnnouncement] = useState<string>(() => localStorage.getItem('briefora_admin_broadcast_msg') || localStorage.getItem('briefora_broadcast_msg') || '⚡ Briefora v2.4 Live!');
+  const [announcementActive, setAnnouncementActive] = useState<boolean>(() => localStorage.getItem('briefora_admin_broadcast_active') === 'true' || localStorage.getItem('briefora_broadcast_active') === 'true');
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => JSON.parse(localStorage.getItem('briefora_admin_logs') || 'null') || [
@@ -139,7 +138,7 @@ export default function AdminPortal() {
       action, 
       target, 
       timestamp: new Date().toLocaleTimeString(), 
-      admin: 'admin' 
+      admin: 'admin'
     };
     setAuditLogs((prev) => [newLog, ...prev]);
   };
@@ -155,6 +154,9 @@ export default function AdminPortal() {
 
       const fetchedFaqs = await fetchSyncedData('faqs', faqs);
       if (fetchedFaqs) setFaqs(fetchedFaqs);
+
+      const fetchedTestimonials = await fetchSyncedData('testimonials', defaultTestimonials);
+      if (fetchedTestimonials) setTestimonials(fetchedTestimonials);
     }
     loadCloudSettings();
   }, []);
@@ -162,14 +164,12 @@ export default function AdminPortal() {
   // Dedicated Save Handlers
   const handleSavePricing = async () => {
     await syncAndSaveData('pricing', pricingPlans);
-    await syncAndSaveData('briefora_admin_pricing', pricingPlans);
     addAuditLog('UPDATE_PRICING', 'Pricing Plans');
     showToast('Pricing Plans Saved & Synced to Supabase!');
   };
 
   const handleSaveHeroCopy = async () => {
     await syncAndSaveData('hero_copy', heroCopy);
-    await syncAndSaveData('briefora_admin_hero_copy', heroCopy);
     addAuditLog('UPDATE_HERO_COPY', 'Hero Section');
     showToast('Hero Copy Saved & Synced!');
   };
@@ -177,7 +177,6 @@ export default function AdminPortal() {
   const handleSaveFaqs = async (updatedFaqs: any[]) => {
     setFaqs(updatedFaqs);
     await syncAndSaveData('faqs', updatedFaqs);
-    await syncAndSaveData('briefora_admin_faqs', updatedFaqs);
     showToast('FAQ Data Synced!');
   };
 
@@ -333,14 +332,14 @@ export default function AdminPortal() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-3 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 rounded-xl text-xs tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full mt-3 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold py-3.5 rounded-xl text-xs tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <>Enter Control Center <ChevronRight className="w-4 h-4" /></>}
             </button>
           </form>
 
           <div className="mt-4 text-center">
-            <button onClick={() => navigate('/')} className="text-[11px] font-semibold text-slate-500 hover:text-brand-primary">
+            <button onClick={() => navigate('/')} className="text-[11px] font-semibold text-slate-500 hover:text-brand-primary cursor-pointer">
               ← Back to Main Website
             </button>
           </div>
@@ -378,11 +377,11 @@ export default function AdminPortal() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+          <button onClick={() => navigate('/')} className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer">
             <ExternalLink className="w-3.5 h-3.5" /> Live Site
           </button>
 
-          <button onClick={handleLogout} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold">
+          <button onClick={handleLogout} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold cursor-pointer">
             <LogOut className="w-3.5 h-3.5" /> Logout
           </button>
         </div>
@@ -406,7 +405,7 @@ export default function AdminPortal() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeTab === tab.id ? 'bg-brand-primary text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -467,7 +466,7 @@ export default function AdminPortal() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs w-full sm:w-64"
                 />
-                <button onClick={() => setIsAddUserOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 shrink-0">
+                <button onClick={() => setIsAddUserOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 cursor-pointer">
                   <Plus className="w-4 h-4" /> Add User
                 </button>
               </div>
@@ -494,7 +493,7 @@ export default function AdminPortal() {
                       <td className="p-3.5"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded-full">{u.status}</span></td>
                       <td className="p-3.5 font-mono">{u.createdAt}</td>
                       <td className="p-3.5 text-right">
-                        <button onClick={() => handleDeleteUser(u.id)} className="p-1 text-slate-400 hover:text-rose-600">
+                        <button onClick={() => handleDeleteUser(u.id)} className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
@@ -511,7 +510,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">Hero Section Copy Editor</h3>
-              <button onClick={handleSaveHeroCopy} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={handleSaveHeroCopy} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
                 <Save className="w-4 h-4" /> Save Copy
               </button>
             </div>
@@ -648,7 +647,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">FAQ Content Management</h3>
-              <button onClick={() => setIsAddFaqOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={() => setIsAddFaqOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
                 <Plus className="w-4 h-4" /> Add FAQ Item
               </button>
             </div>
@@ -659,7 +658,7 @@ export default function AdminPortal() {
                     <div className="font-bold text-xs text-slate-900">Q: {faq.question || faq.q}</div>
                     <div className="text-xs text-slate-600">A: {faq.answer || faq.a}</div>
                   </div>
-                  <button onClick={() => handleDeleteFaq(idx)} className="text-slate-400 hover:text-rose-600 p-1">
+                  <button onClick={() => handleDeleteFaq(idx)} className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -700,7 +699,7 @@ export default function AdminPortal() {
                       </td>
                       <td className="p-3.5 font-bold">{b.views}</td>
                       <td className="p-3.5 text-right">
-                        <button onClick={() => handleDeleteBrief(b.id)} className="p-1 text-slate-400 hover:text-rose-600">
+                        <button onClick={() => handleDeleteBrief(b.id)} className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
@@ -730,7 +729,7 @@ export default function AdminPortal() {
                     syncAndSaveData('maintenance', String(e.target.checked));
                     showToast(e.target.checked ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled');
                   }}
-                  className="w-5 h-5 accent-brand-primary"
+                  className="w-5 h-5 accent-brand-primary cursor-pointer"
                 />
               </div>
 
@@ -747,7 +746,7 @@ export default function AdminPortal() {
                     syncAndSaveData('signups_enabled', String(e.target.checked));
                     showToast(e.target.checked ? 'Signups Allowed' : 'Signups Disabled');
                   }}
-                  className="w-5 h-5 accent-brand-primary"
+                  className="w-5 h-5 accent-brand-primary cursor-pointer"
                 />
               </div>
 
@@ -765,7 +764,7 @@ export default function AdminPortal() {
                       syncAndSaveData('broadcast_active', String(e.target.checked));
                       showToast(e.target.checked ? 'Banner Activated' : 'Banner Deactivated');
                     }}
-                    className="w-5 h-5 accent-brand-primary"
+                    className="w-5 h-5 accent-brand-primary cursor-pointer"
                   />
                 </div>
                 <input
@@ -787,7 +786,7 @@ export default function AdminPortal() {
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900">Legal Document Editors</h3>
-              <button onClick={handleSaveLegal} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2">
+              <button onClick={handleSaveLegal} className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
                 <Save className="w-4 h-4" /> Save Legal Copy
               </button>
             </div>
@@ -831,7 +830,7 @@ export default function AdminPortal() {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-bold text-slate-900 text-sm">Create New Account</h4>
-                <button onClick={() => setIsAddUserOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+                <button onClick={() => setIsAddUserOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleAddUser} className="space-y-3">
                 <input type="text" placeholder="Full Name" required value={newUserName} onChange={(e) => setNewUserName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs" />
@@ -841,7 +840,7 @@ export default function AdminPortal() {
                   <option value="Pro">Pro Plan ($9/mo)</option>
                   <option value="Studio">Studio Plan ($29/mo)</option>
                 </select>
-                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2">Create User</button>
+                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2 cursor-pointer">Create User</button>
               </form>
             </motion.div>
           </div>
@@ -855,12 +854,12 @@ export default function AdminPortal() {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-bold text-slate-900 text-sm">Add New FAQ Question</h4>
-                <button onClick={() => setIsAddFaqOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+                <button onClick={() => setIsAddFaqOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleAddFaq} className="space-y-3">
                 <input type="text" placeholder="Question" required value={newFaqQuestion} onChange={(e) => setNewFaqQuestion(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold" />
                 <textarea rows={3} placeholder="Answer" required value={newFaqAnswer} onChange={(e) => setNewFaqAnswer(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium" />
-                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2">Add FAQ</button>
+                <button type="submit" className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider mt-2 cursor-pointer">Add FAQ</button>
               </form>
             </motion.div>
           </div>

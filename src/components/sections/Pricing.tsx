@@ -6,7 +6,7 @@ import {
   getAdminPricing, 
   fetchSettingFromSupabase, 
   subscribeToSupabaseChanges, 
-  ADMIN_SYNC_EVENT 
+  ADMIN_SYNC_EVENT
 } from '../../lib/adminSync';
 import { ScrollBlurHeading } from '../ui/ScrollBlurHeading';
 import { PrimaryBrandButton } from '../ui/PrimaryBrandButton';
@@ -70,7 +70,7 @@ export default function Pricing() {
     };
   }, []);
 
-  const handleCTA = (planId: string) => {
+  const handleCTA = (_planId: string) => {
     navigate('/signup');
   };
 
@@ -80,7 +80,6 @@ export default function Pricing() {
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
         {/* Header section */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-5">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-semibold uppercase tracking-wider">
@@ -121,11 +120,13 @@ export default function Pricing() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
           {plans.map((plan: any) => {
             const isPro = plan.popular;
-            const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+            const price = isAnnual 
+              ? (plan.priceAnnual !== undefined ? plan.priceAnnual : Math.round((plan.priceMonthly ?? plan.price ?? 0) * 0.8))
+              : (plan.priceMonthly !== undefined ? plan.priceMonthly : (plan.price !== undefined ? plan.price : 0));
 
             return (
               <motion.div
-                key={plan.id}
+                key={plan.id || plan.name}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -164,7 +165,7 @@ export default function Pricing() {
                   </div>
 
                   <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                    {plan.description}
+                    {plan.description || plan.desc}
                   </p>
 
                   <div className="py-4">
