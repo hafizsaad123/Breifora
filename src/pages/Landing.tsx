@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import Logo from '../components/ui/Logo';
@@ -15,6 +15,8 @@ import howitworkscard03 from '../assets/images/howitworkscard03.png';
 
 export default function Landing() {
   const { settings } = useAppSettings();
+  const location = useLocation();
+
   // Mobile menu open state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -23,6 +25,21 @@ export default function Landing() {
 
   // FAQ open index state (0 open by default)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Hash-scrolling logic on mount or navigation
+  useEffect(() => {
+    if (location.hash) {
+      const targetId = location.hash.substring(1);
+      // Wait slightly for DOM rendering
+      const timer = setTimeout(() => {
+        const element = document.getElementById(targetId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash]);
 
   // Scroll text section ref & words state
   const scrollSectionRef = useRef<HTMLElement | null>(null);

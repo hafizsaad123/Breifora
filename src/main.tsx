@@ -7,6 +7,7 @@ import AdminPortal from './pages/AdminPortal.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import UsagePolicy from './pages/UsagePolicy.tsx';
 import TermsOfService from './pages/TermsOfService.tsx';
+import ContactUs from './pages/ContactUs.tsx';
 import { ErrorBoundary } from './components/ui/ErrorBoundary.tsx';
 import { AppSettingsProvider } from './context/AppSettingsContext.tsx';
 import './index.css';
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/privacypolicy" element={<PrivacyPolicy />} />
             <Route path="/usagepolicy" element={<UsagePolicy />} />
             <Route path="/termsofservice" element={<TermsOfService />} />
+            <Route path="/contactus" element={<ContactUs />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

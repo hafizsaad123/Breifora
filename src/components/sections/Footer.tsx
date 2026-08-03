@@ -1,14 +1,23 @@
 import { Layers, Github, Twitter, Linkedin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../ui/Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      navigate('/#' + id);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
     }
   };
 
@@ -80,6 +89,9 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/usagepolicy" className="font-normal hover:text-slate-900 transition-colors block">Usage Policy</Link>
+              </li>
+              <li>
+                <Link to="/contactus" className="font-semibold text-brand-primary hover:text-[#1d11cc] transition-colors block">Contact Us</Link>
               </li>
             </ul>
           </div>
