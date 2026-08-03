@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, FileText, Clock } from 'lucide-react';
+import { ChevronLeft, FileText } from 'lucide-react';
 import { useAppSettings } from '../context/AppSettingsContext';
 import Logo from '../components/ui/Logo';
 
@@ -52,9 +52,6 @@ export default function TermsOfService() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-none">
               Terms of Service
             </h1>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium pt-1">
-              <Clock className="w-3.5 h-3.5" /> Last updated: July 31, 2026
-            </div>
           </div>
 
           {/* Dynamic Content (Supports HTML from Admin) */}

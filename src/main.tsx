@@ -24,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/forgotpassword" element={<Signup defaultMode="forgot" />} />
             <Route path="/resetpassword" element={<Signup defaultMode="updatepassword" />} />
             <Route path="/onboarding" element={<Signup defaultMode="onboarding" />} />
+            <Route path="/dashboard" element={<Signup defaultMode="dashboard" />} />
             <Route path="/home" element={<Signup defaultMode="dashboard" />} />
             <Route path="/admin" element={<AdminPortal />} />
             <Route path="/privacypolicy" element={<PrivacyPolicy />} />

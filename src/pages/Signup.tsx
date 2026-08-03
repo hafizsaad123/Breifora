@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import Dashboard from './Dashboard';
+import { supabase } from '../utils/supabase';
 
 const countriesList = [
   { code: 'AF', name: 'Afghanistan' },
@@ -265,6 +266,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
         return 'updatepassword';
       case '/onboarding':
         return 'onboarding';
+      case '/dashboard':
       case '/home':
         return 'dashboard';
       default:
@@ -293,6 +295,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   // UI Feedback Alerts
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Google OAuth Popup simulator state
   const [showGooglePopup, setShowGooglePopup] = useState(false);
@@ -325,6 +328,57 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     setErrorMessage('');
     setSuccessMessage('');
   }, [location.pathname]);
+
+  // Sync Supabase Auth Session and redirects
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = session.user;
+        const localUser = {
+          email: user.email,
+          firstName: user.user_metadata?.first_name || 'User',
+          lastName: user.user_metadata?.last_name || '',
+          avatar: user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: user.user_metadata?.user_role || 'Agency Partner',
+          industryFocus: user.user_metadata?.industry_focus || 'B2B Branding & Identity',
+          priorities: user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: user.user_metadata?.onboarded || false
+        };
+        localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
+
+        if (authMode === 'login' || authMode === 'signup') {
+          navigate('/dashboard');
+        }
+      }
+    };
+    checkActiveSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const user = session.user;
+        const localUser = {
+          email: user.email,
+          firstName: user.user_metadata?.first_name || 'User',
+          lastName: user.user_metadata?.last_name || '',
+          avatar: user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: user.user_metadata?.user_role || 'Agency Partner',
+          industryFocus: user.user_metadata?.industry_focus || 'B2B Branding & Identity',
+          priorities: user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: user.user_metadata?.onboarded || false
+        };
+        localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
+      } else {
+        localStorage.removeItem('briefora_current_user');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [authMode, navigate]);
 
   // Sync profile pre-fills on onboarding load
   useEffect(() => {
@@ -363,7 +417,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   };
 
   // Registration Form Handler
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -373,8 +427,8 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
       return;
     }
 
@@ -383,42 +437,69 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       return;
     }
 
-    const users = getRegisteredUsers();
-    const exists = users.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase(),
+        password: password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            avatar: selectedAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+            workspace_name: `${lastName} Strategy Deck`,
+            user_role: 'Agency Partner',
+            industry_focus: 'B2B Branding & Identity',
+            priorities: ['Auto-generating detailed client briefs'],
+            onboarded: false
+          }
+        }
+      });
 
-    if (exists) {
-      setErrorMessage('An account with this email address already exists. Please log in.');
-      return;
+      if (error) {
+        setErrorMessage(error.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data?.user) {
+        const newUser = {
+          email: email.toLowerCase(),
+          firstName: firstName,
+          lastName: lastName,
+          country: 'US',
+          avatar: selectedAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: `${lastName} Strategy Deck`,
+          userRole: 'Agency Partner',
+          industryFocus: 'B2B Branding & Identity',
+          priorities: ['Auto-generating detailed client briefs'],
+          onboarded: false
+        };
+
+        // Save session locally
+        localStorage.setItem('briefora_current_user', JSON.stringify(newUser));
+        
+        // Save to compatibility registry
+        const users = getRegisteredUsers();
+        const updatedUsers = [...users, { ...newUser, password: 'supabase_auth_user' }];
+        saveRegisteredUsers(updatedUsers);
+
+        setSuccessMessage('Account registered successfully! Welcome aboard.');
+        setTimeout(() => {
+          navigate('/onboarding');
+        }, 800);
+      } else {
+        setSuccessMessage('Registration successful! Please verify your email.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred during signup.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const newUser = {
-      email: email.toLowerCase(),
-      password: password,
-      firstName: firstName,
-      lastName: lastName,
-      country: selectedCountry,
-      avatar: selectedAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-      workspaceName: `${lastName} Strategy Deck`,
-      userRole: 'Agency Partner',
-      industryFocus: 'B2B Branding & Identity',
-      priorities: ['Auto-generating detailed client briefs'],
-      onboarded: false
-    };
-
-    const updatedUsers = [...users, newUser];
-    saveRegisteredUsers(updatedUsers);
-
-    // Save as active logged-in session
-    localStorage.setItem('briefora_current_user', JSON.stringify(newUser));
-    setSuccessMessage('Account registered successfully! Welcome aboard.');
-    
-    setTimeout(() => {
-      navigate('/onboarding');
-    }, 800);
   };
 
   // Login Form Handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -428,26 +509,50 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       return;
     }
 
-    const users = getRegisteredUsers();
-    const user = users.find((u: any) => u.email.toLowerCase() === loginEmail.toLowerCase());
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.toLowerCase(),
+        password: loginPassword,
+      });
 
-    if (!user) {
-      setErrorMessage('No registered account was found with this email. Please sign up first.');
-      return;
+      if (error) {
+        setErrorMessage(error.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data?.user) {
+        const user = data.user;
+        const localUser = {
+          email: user.email,
+          firstName: user.user_metadata?.first_name || 'User',
+          lastName: user.user_metadata?.last_name || '',
+          avatar: user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: user.user_metadata?.user_role || 'Agency Partner',
+          industryFocus: user.user_metadata?.industry_focus || 'B2B Branding & Identity',
+          priorities: user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: user.user_metadata?.onboarded || false
+        };
+
+        // Save session
+        localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
+        setSuccessMessage('Authenticated successfully! Loading your deck...');
+
+        setTimeout(() => {
+          if (localUser.onboarded) {
+            navigate('/dashboard');
+          } else {
+            navigate('/onboarding');
+          }
+        }, 800);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred during login.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (user.password !== loginPassword && user.password !== 'google_oauth_bypass') {
-      setErrorMessage('Incorrect password. Please verify your credentials and try again.');
-      return;
-    }
-
-    // Save current session
-    localStorage.setItem('briefora_current_user', JSON.stringify(user));
-    setSuccessMessage('Authenticated successfully! Loading your deck...');
-
-    setTimeout(() => {
-      navigate('/onboarding');
-    }, 800);
   };
 
   // Simulated Google Login
@@ -549,7 +654,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     }, 350);
   };
 
-  const completeOnboarding = () => {
+  const completeOnboarding = async () => {
     const currentRaw = localStorage.getItem('briefora_current_user');
     if (currentRaw) {
       try {
@@ -568,6 +673,26 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           onboarded: true
         };
 
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            await supabase.auth.updateUser({
+              data: {
+                first_name: confirmFirstName,
+                last_name: confirmLastName,
+                avatar: selectedAvatar,
+                workspace_name: workspaceName,
+                user_role: userRole,
+                industry_focus: industryFocus,
+                priorities: priorities,
+                onboarded: true
+              }
+            });
+          }
+        } catch (authErr) {
+          console.error("Failed to sync onboarding details to Supabase Auth metadata:", authErr);
+        }
+
         // Write back to registry list
         const users = getRegisteredUsers();
         const updatedUsers = users.map((u: any) => 
@@ -579,7 +704,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
         localStorage.setItem('briefora_current_user', JSON.stringify(completedUser));
 
         setTimeout(() => {
-          navigate('/home');
+          navigate('/dashboard');
         }, 300);
       } catch (e) {
         console.error(e);
@@ -597,7 +722,8 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   };
 
   if (authMode === 'dashboard') {
-    return <Dashboard onLogout={() => {
+    return <Dashboard onLogout={async () => {
+      await supabase.auth.signOut();
       localStorage.removeItem('briefora_current_user');
       navigate('/login');
     }} />;
@@ -1013,24 +1139,6 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   />
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Country</label>
-                  <div className="relative mt-1">
-                    <select 
-                      value={selectedCountry} 
-                      onChange={(e) => setSelectedCountry(e.target.value)}
-                      className="w-full bg-white border border-slate-200/90 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] cursor-pointer appearance-none font-medium transition-all"
-                    >
-                      {countriesList.map((c) => (
-                        <option key={c.code} value={c.code} className="text-slate-900 font-medium">{c.code} - {c.name}</option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-slate-400">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"/></svg>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-2 pt-1 select-none">
                   <input 
                     type="checkbox" 
@@ -1045,8 +1153,24 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   </label>
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs hover:bg-[#1f10e6] mt-2 cursor-pointer border-none transition-all shadow-sm">
-                  Sign up
+                <motion.button 
+                  whileHover={{ y: isSubmitting ? 0 : -0.5 }} 
+                  whileTap={{ scale: isSubmitting ? 1 : 0.985 }} 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-full bg-[#2516FF] disabled:bg-[#2516FF]/60 text-white font-bold text-xs hover:bg-[#1f10e6] mt-2 cursor-pointer border-none transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Creating account...</span>
+                    </>
+                  ) : (
+                    'Sign up'
+                  )}
                 </motion.button>
               </form>
 
@@ -1116,8 +1240,24 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   />
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm">
-                  Log in
+                <motion.button 
+                  whileHover={{ y: isSubmitting ? 0 : -0.5 }} 
+                  whileTap={{ scale: isSubmitting ? 1 : 0.985 }} 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-full bg-[#2516FF] disabled:bg-[#2516FF]/60 text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Authenticating...</span>
+                    </>
+                  ) : (
+                    'Log in'
+                  )}
                 </motion.button>
               </form>
 
@@ -1145,7 +1285,49 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight text-center leading-tight">Reset Your Password</h2>
               <p className="text-xs font-normal text-slate-500 mt-1.5 text-center mb-6 leading-relaxed">Enter your email address to receive a secure recovery link in your inbox.</p>
 
-              <form onSubmit={(e) => { e.preventDefault(); navigate('/resetpassword'); }} className="space-y-4">
+              {errorMessage && (
+                <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-rose-600 mb-4 animate-fade-in">
+                  <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold leading-normal">{errorMessage}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-emerald-600 mb-4 animate-fade-in">
+                  <Check className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold leading-normal">{successMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setErrorMessage('');
+                setSuccessMessage('');
+
+                if (!resetEmail) {
+                  setErrorMessage('Please enter your work email.');
+                  return;
+                }
+
+                setIsSubmitting(true);
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.toLowerCase(), {
+                    redirectTo: 'https://breifora.vercel.app/resetpassword',
+                  });
+
+                  if (error) {
+                    setErrorMessage(error.message);
+                    setIsSubmitting(false);
+                    return;
+                  }
+
+                  setSuccessMessage('Reset link sent! Please check your email inbox.');
+                } catch (err: any) {
+                  setErrorMessage(err.message || 'An unexpected error occurred while sending reset link.');
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }} className="space-y-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Work email</label>
                   <input 
@@ -1158,8 +1340,24 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   />
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm">
-                  Send Link
+                <motion.button 
+                  whileHover={{ y: isSubmitting ? 0 : -0.5 }} 
+                  whileTap={{ scale: isSubmitting ? 1 : 0.985 }} 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-full bg-[#2516FF] disabled:bg-[#2516FF]/60 text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Sending link...</span>
+                    </>
+                  ) : (
+                    'Send Link'
+                  )}
                 </motion.button>
               </form>
             </motion.div>
@@ -1190,22 +1388,52 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                 </div>
               )}
 
-              <form onSubmit={(e) => { 
+              {successMessage && (
+                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-emerald-600 mb-4 animate-fade-in">
+                  <Check className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold leading-normal">{successMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={async (e) => { 
                 e.preventDefault(); 
+                setErrorMessage('');
+                setSuccessMessage('');
+
+                if (!newPassword || !confirmNewPassword) {
+                  setErrorMessage('Please fill in both password fields.');
+                  return;
+                }
+
+                if (newPassword.length < 8) {
+                  setErrorMessage('Password must be at least 8 characters long.');
+                  return;
+                }
+
                 if (newPassword !== confirmNewPassword) {
                   setErrorMessage('Passwords do not match. Please verify.');
                   return;
                 }
-                const users = getRegisteredUsers();
-                const matchedUser = users.find((u: any) => u.email.toLowerCase() === resetEmail.toLowerCase());
-                if (matchedUser) {
-                  matchedUser.password = newPassword;
-                  saveRegisteredUsers(users);
+
+                setIsSubmitting(true);
+                try {
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+                  if (error) {
+                    setErrorMessage(error.message);
+                    setIsSubmitting(false);
+                    return;
+                  }
+
+                  setSuccessMessage('Password updated successfully! Redirecting to login...');
+                  setTimeout(() => {
+                    navigate('/login');
+                  }, 2000);
+                } catch (err: any) {
+                  setErrorMessage(err.message || 'An unexpected error occurred while resetting password.');
+                } finally {
+                  setIsSubmitting(false);
                 }
-                setSuccessMessage('Password updated successfully! Please log in.');
-                setTimeout(() => {
-                  navigate('/login');
-                }, 800);
               }} className="space-y-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">New password</label>
@@ -1230,8 +1458,24 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   />
                 </div>
 
-                <motion.button whileHover={{ y: -0.5 }} whileTap={{ scale: 0.985 }} type="submit" className="w-full py-3 rounded-full bg-[#2516FF] text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm">
-                  Update password
+                <motion.button 
+                  whileHover={{ y: isSubmitting ? 0 : -0.5 }} 
+                  whileTap={{ scale: isSubmitting ? 1 : 0.985 }} 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-full bg-[#2516FF] disabled:bg-[#2516FF]/60 text-white font-bold text-xs hover:bg-[#1f10e6] mt-4 cursor-pointer border-none transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Updating password...</span>
+                    </>
+                  ) : (
+                    'Update password'
+                  )}
                 </motion.button>
               </form>
 
