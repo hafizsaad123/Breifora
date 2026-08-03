@@ -165,7 +165,7 @@ export default function ContactUs() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#FAFAFC] font-sans antialiased text-slate-800 flex flex-col justify-between selection:bg-[#2516FF]/10 selection:text-[#2516FF] relative overflow-x-hidden">
+    <div className="w-full min-h-screen bg-[#FAFAFC] font-sans antialiased text-slate-800 flex flex-col justify-between relative overflow-x-hidden">
       
       {/* Absolute background accent glow */}
       <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-[#2516FF]/5 blur-[120px] pointer-events-none" />
@@ -389,7 +389,7 @@ export default function ContactUs() {
                       required
                     />
                     <span className="text-xs text-slate-500 font-semibold leading-relaxed">
-                      I agree to the <Link to="/termsofservice" className="text-[#2516FF] underline hover:text-[#1d11cc]">Terms of Service</Link> and <Link to="/privacypolicy" className="text-[#2516FF] underline hover:text-[#1d11cc]">Privacy Policy</Link>, and consent to having this form data stored for response delivery. <span className="text-red-500">*</span>
+                      I agree to the <a href="/termsofservice" target="_blank" rel="noopener noreferrer" className="text-[#2516FF] underline hover:text-[#1d11cc]">Terms of Service</a> and <a href="/privacypolicy" target="_blank" rel="noopener noreferrer" className="text-[#2516FF] underline hover:text-[#1d11cc]">Privacy Policy</a>, and consent to having this form data stored for response delivery. <span className="text-red-500">*</span>
                     </span>
                   </label>
                   {touched.consent && !consent && (

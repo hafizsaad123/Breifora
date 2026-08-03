@@ -14,6 +14,16 @@ html {
   scroll-padding-top: 6rem;
 }
 
+/* Custom global text selection style */
+::selection {
+  background-color: #EEEDFF !important;
+  color: #2516FF !important;
+}
+::-moz-selection {
+  background-color: #EEEDFF !important;
+  color: #2516FF !important;
+}
+
 body {
   font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }

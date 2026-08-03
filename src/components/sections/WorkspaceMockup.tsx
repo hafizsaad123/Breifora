@@ -499,7 +499,7 @@ export default function WorkspaceMockup() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                   <div className={`p-3.5 rounded-xl border text-center ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <div className="flex justify-center mb-1.5">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-primary-light text-brand-primary flex items-center justify-center">
                         <FolderGit className="w-4 h-4" />
                       </div>
                     </div>

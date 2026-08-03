@@ -81,7 +81,7 @@ export default function ProcessSteps() {
                   </div>
 
                   {/* Graphic Mock Box to mimic visual card styling in the raw mockup */}
-                  <div className="w-full h-24 rounded-xl bg-gradient-to-r from-indigo-150 via-purple-100 to-indigo-100 flex items-center justify-center p-3 overflow-hidden select-none relative transition-transform duration-300">
+                  <div className="w-full h-24 rounded-xl bg-gradient-to-r from-[#2516FF]/10 via-slate-100 to-[#2516FF]/15 flex items-center justify-center p-3 overflow-hidden select-none relative transition-transform duration-300">
                     <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent blur-md"></div>
                     <div className="w-full text-center space-y-1.5 z-10">
                       <span className="h-2 w-12 bg-white/60 rounded block mx-auto"></span>

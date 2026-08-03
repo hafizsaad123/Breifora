@@ -30,7 +30,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-800 antialiased selection:bg-[#2516FF]/10 selection:text-[#2516FF] relative">
+    <div className="min-h-screen bg-white font-sans text-slate-800 antialiased relative">
       {/* Global Broadcast Banner */}
       {settings.broadcast_active && !bannerClosed && (
         <div className="bg-[#2516FF] text-white text-xs sm:text-sm py-2.5 px-4 font-medium flex items-center justify-between gap-3 sticky top-0 z-50 shadow-sm">

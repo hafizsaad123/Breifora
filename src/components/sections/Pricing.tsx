@@ -120,7 +120,7 @@ export default function Pricing() {
                       </span>
                     )}
                     {plan.id === 'plan-studio' && (
-                      <span className="px-2.5 py-0.5 bg-purple-50 text-indigo-800 font-semibold text-[10px] rounded-full uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 bg-primary-light text-brand-primary font-semibold text-[10px] rounded-full uppercase tracking-wider">
                         Enterprise
                       </span>
                     )}

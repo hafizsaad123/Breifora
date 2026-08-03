@@ -13,7 +13,7 @@ export default function UsagePolicy() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-[#FAFAFC] font-sans antialiased text-slate-850 selection:bg-[#2516FF]/10 selection:text-[#2516FF]">
+    <div className="w-full min-h-screen bg-[#FAFAFC] font-sans antialiased text-slate-850">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/60 py-4 px-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -59,7 +59,7 @@ export default function UsagePolicy() {
 
           {/* Dynamic Content (Supports HTML from Admin) */}
           <div 
-            className="prose prose-slate prose-sm sm:prose max-w-none text-slate-600 leading-relaxed space-y-6
+            className="prose prose-slate prose-sm sm:prose max-w-none text-slate-600 leading-relaxed space-y-6 break-words overflow-hidden
               [&>h2]:text-lg [&>h2]:sm:text-xl [&>h2]:font-bold [&>h2]:text-slate-900 [&>h2]:tracking-tight [&>h2]:mt-8 [&>h2]:mb-3
               [&>p]:text-sm [&>p]:sm:text-base [&>p]:text-slate-600 [&>p]:leading-relaxed
               [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-2 [&>ul]:text-sm [&>ul]:sm:text-base [&>ul]:text-slate-600

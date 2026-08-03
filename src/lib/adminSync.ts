@@ -99,6 +99,12 @@ export function getDbSyncStatus(): boolean {
 }
 
 export const getAdminHeroCopy = () => {
+  const savedUnified = localStorage.getItem('briefora_admin_hero_settings');
+  if (savedUnified) {
+    try {
+      return JSON.parse(savedUnified);
+    } catch {}
+  }
   const saved = localStorage.getItem('briefora_admin_hero_copy');
   if (saved) {
     try { 
@@ -115,11 +121,49 @@ export const getAdminHeroCopy = () => {
   };
 };
 
-export const getAdminPrivacyPolicy = () => localStorage.getItem('briefora_admin_privacy_policy') || localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
-export const getAdminUsagePolicy = () => localStorage.getItem('briefora_admin_usage_policy') || localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
-export const getAdminTermsOfService = () => localStorage.getItem('briefora_admin_terms_of_service') || localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
+export const getAdminPrivacyPolicy = () => {
+  const savedUnified = localStorage.getItem('briefora_admin_legal_policies');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (parsed && parsed.privacy_policy) return parsed.privacy_policy;
+    } catch {}
+  }
+  return localStorage.getItem('briefora_admin_privacy_policy') || localStorage.getItem('briefora_privacy_policy') || 'Standard Privacy Policy content for Briefora users.';
+};
+
+export const getAdminUsagePolicy = () => {
+  const savedUnified = localStorage.getItem('briefora_admin_legal_policies');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (parsed && parsed.usage_policy) return parsed.usage_policy;
+    } catch {}
+  }
+  return localStorage.getItem('briefora_admin_usage_policy') || localStorage.getItem('briefora_usage_policy') || 'Standard Usage Policy content for Briefora services.';
+};
+
+export const getAdminTermsOfService = () => {
+  const savedUnified = localStorage.getItem('briefora_admin_legal_policies');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (parsed && parsed.terms_of_service) return parsed.terms_of_service;
+    } catch {}
+  }
+  return localStorage.getItem('briefora_admin_terms_of_service') || localStorage.getItem('briefora_terms_of_service') || 'Standard Terms of Service agreement for Briefora.';
+};
 
 export function getAdminPricing() {
+  const savedUnified = localStorage.getItem('briefora_admin_pricing_settings');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {}
+  }
   const saved = localStorage.getItem('briefora_admin_pricing');
   if (saved) {
     try {
@@ -149,6 +193,21 @@ export function getAdminPricing() {
 }
 
 export function getAdminFaqs() {
+  const savedUnified = localStorage.getItem('briefora_admin_faq_reviews_settings');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (parsed && Array.isArray(parsed.faqs)) {
+        return parsed.faqs.map((item: any, index: number) => ({
+          id: item.id || `faq-${index}`,
+          question: item.question || item.q || '',
+          answer: item.answer || item.a || '',
+          q: item.question || item.q || '',
+          a: item.answer || item.a || '',
+        }));
+      }
+    } catch {}
+  }
   const saved = localStorage.getItem('briefora_admin_faqs');
   if (saved) {
     try {
@@ -176,6 +235,15 @@ export function getAdminFaqs() {
 }
 
 export function getAdminTestimonials() {
+  const savedUnified = localStorage.getItem('briefora_admin_faq_reviews_settings');
+  if (savedUnified) {
+    try {
+      const parsed = JSON.parse(savedUnified);
+      if (parsed && Array.isArray(parsed.testimonials)) {
+        return parsed.testimonials;
+      }
+    } catch {}
+  }
   const saved = localStorage.getItem('briefora_admin_testimonials');
   if (saved) {
     try { 
@@ -188,8 +256,11 @@ export function getAdminTestimonials() {
 }
 
 export function getSystemConfig() {
+  const m1 = localStorage.getItem('briefora_admin_maintenance');
+  const m2 = localStorage.getItem('briefora_maintenance');
+  const isMaintenance = m1 === 'true' || m2 === 'true';
   return {
-    maintenanceMode: localStorage.getItem('briefora_admin_maintenance') === 'true' || localStorage.getItem('briefora_maintenance') === 'true',
+    maintenanceMode: isMaintenance,
     maintenanceMsg: localStorage.getItem('briefora_admin_maintenance_msg') || localStorage.getItem('briefora_maintenance_msg') || 'Briefora is undergoing scheduled system upgrades. We will be back online shortly.',
     signupsEnabled: localStorage.getItem('briefora_admin_signups_enabled') !== 'false',
     broadcastActive: localStorage.getItem('briefora_admin_broadcast_active') === 'true' || localStorage.getItem('briefora_broadcast_active') === 'true',

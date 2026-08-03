@@ -82,7 +82,7 @@ export default function Landing() {
   let wordCounter = 0;
 
   return (
-    <div className="bg-[#FFFFFF] text-slate-900 font-sans antialiased selection:bg-[#2516FF] selection:text-white font-normal min-h-screen">
+    <div className="bg-[#FFFFFF] text-slate-900 font-sans antialiased font-normal min-h-screen overflow-x-hidden w-full relative">
       {/* Navigation Bar */}
       <header className="fixed top-5 left-0 right-0 z-50 px-4 md:px-8">
         <div className="max-w-6xl mx-auto bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 flex items-center justify-between">
