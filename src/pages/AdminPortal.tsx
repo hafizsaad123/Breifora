@@ -199,13 +199,13 @@ export default function AdminPortal() {
     setLoginError('');
 
     setTimeout(() => {
-      if (username.trim() === 'admin' && password === 'admin') {
+      if (username.trim() === 'admin' && password === 'kP9$vX!2mQ#7bZ&9') {
         sessionStorage.setItem('briefora_admin_authed', 'true');
         setIsAuthenticated(true);
         addAuditLog('ADMIN_LOGIN_SUCCESS', 'Admin Portal');
         showToast('Welcome back, Admin!');
       } else {
-        setLoginError('Invalid credentials. Use admin / admin.');
+        setLoginError('Invalid credentials. Please check your username and password.');
       }
       setIsSubmitting(false);
     }, 400);
