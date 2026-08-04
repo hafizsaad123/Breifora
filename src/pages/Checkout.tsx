@@ -144,8 +144,12 @@ export default function Checkout() {
 
   // WhatsApp Link Generation
   const whatsappUrl = useMemo(() => {
-    const num = checkoutConfig.whatsAppConfig.number.replace(/[^0-9]/g, '');
-    let template = checkoutConfig.whatsAppConfig.messageTemplate || defaultCheckoutConfig.whatsAppConfig.messageTemplate;
+    let rawNum = checkoutConfig.whatsAppConfig?.number || '03150106504';
+    let digits = rawNum.replace(/[^0-9]/g, '');
+    if (digits.startsWith('03')) {
+      digits = '92' + digits.slice(1);
+    }
+    let template = checkoutConfig.whatsAppConfig?.messageTemplate || defaultCheckoutConfig.whatsAppConfig.messageTemplate;
 
     const cycleText = isYearly ? 'Annual Billing' : 'Monthly Billing';
 
@@ -156,7 +160,7 @@ export default function Checkout() {
       .replace('{ACCOUNT_NUMBER}', checkoutConfig.accountDetails.mobileAccountNumber)
       .replace('{BILLING_CYCLE}', cycleText);
 
-    return `https://wa.me/${num}?text=${encodeURIComponent(template)}`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(template)}`;
   }, [checkoutConfig, planDetails.name, pkrPriceFormatted, isYearly]);
 
   const isButtonDisabled = checkoutConfig.legalPolicy.enforceTermsCheckbox && !termsAgreed;
@@ -170,13 +174,13 @@ export default function Checkout() {
       {/* Light Theme Header */}
       <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group cursor-pointer">
             <Logo iconSize={32} />
           </Link>
 
           <Link
             to="/#pricing"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-4 py-2 rounded-xl transition-all"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-4 py-2 rounded-xl transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> {pageText.changePlanText || 'Change Plan'}
           </Link>

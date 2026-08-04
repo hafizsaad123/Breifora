@@ -58,10 +58,15 @@ export default function Pricing() {
 
           {/* Monthly/Annual Toggle Switcher */}
           <div className="flex items-center justify-center gap-3 pt-6 select-none">
-            <span className={`text-xs font-semibold uppercase tracking-wider transition-colors ${!isAnnual ? 'text-brand-primary' : 'text-slate-400'}`}>
-              Billed Monthly
-            </span>
             <button
+              type="button"
+              onClick={() => setIsAnnual(false)}
+              className={`text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${!isAnnual ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Billed Monthly
+            </button>
+            <button
+              type="button"
               onClick={() => setIsAnnual(!isAnnual)}
               className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 relative ${
                 isAnnual ? 'bg-brand-primary' : 'bg-slate-300'
@@ -74,9 +79,13 @@ export default function Pricing() {
                 transition={{ type: "spring", stiffness: 350, damping: 25 }}
               />
             </button>
-            <span className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors ${isAnnual ? 'text-brand-primary' : 'text-slate-400'}`}>
+            <button
+              type="button"
+              onClick={() => setIsAnnual(true)}
+              className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer ${isAnnual ? 'text-brand-primary font-bold' : 'text-slate-400 hover:text-slate-600'}`}
+            >
               Billed Annually
-            </span>
+            </button>
           </div>
         </div>
 

@@ -649,7 +649,7 @@ export const defaultCheckoutConfig: CheckoutConfig = {
     "Click the 'Confirm on WhatsApp' button below to attach your screenshot and activate your plan."
   ],
   whatsAppConfig: {
-    number: "923299482074",
+    number: "03150106504",
     messageTemplate: "Hi Briefora Team! I have sent PKR {AMOUNT} for the {PLAN_NAME} plan ({BILLING_CYCLE}) to {ACCOUNT_NAME} ({ACCOUNT_NUMBER}). Attached is my transaction receipt screenshot for account activation."
   },
   legalPolicy: {
@@ -665,7 +665,11 @@ export const getAdminCheckoutConfig = (): CheckoutConfig => {
   const saved = localStorage.getItem("briefora_admin_checkout_config");
   if (saved) {
     try {
-      return { ...defaultCheckoutConfig, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      if (parsed.whatsAppConfig?.number === "923299482074" || parsed.whatsAppConfig?.number === "03299482074") {
+        parsed.whatsAppConfig.number = "03150106504";
+      }
+      return { ...defaultCheckoutConfig, ...parsed };
     } catch {}
   }
   return defaultCheckoutConfig;
