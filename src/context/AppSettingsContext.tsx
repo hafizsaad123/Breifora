@@ -8,7 +8,11 @@ import {
   getAdminPrivacyPolicy, 
   getAdminUsagePolicy, 
   getAdminTermsOfService, 
-  getSystemConfig 
+  getSystemConfig,
+  getAdminLandingPageConfig,
+  getAdminCheckoutConfig,
+  CheckoutConfig,
+  defaultCheckoutConfig
 } from '../lib/adminSync';
 
 export interface AppSettings {
@@ -31,6 +35,8 @@ export interface AppSettings {
   signups_enabled: boolean;
   broadcast_active: boolean;
   broadcast_msg: string;
+  landing_page_config: any;
+  checkout_config: CheckoutConfig;
 }
 
 interface AppSettingsContextType {
@@ -60,6 +66,8 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       signups_enabled: sys.signupsEnabled,
       broadcast_active: sys.broadcastActive,
       broadcast_msg: sys.broadcastMsg,
+      landing_page_config: getAdminLandingPageConfig(),
+      checkout_config: getAdminCheckoutConfig(),
     };
   });
 
@@ -140,6 +148,10 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
             newSettings.broadcast_active = extractedValue === 'true' || extractedValue === true;
           } else if (key === 'broadcast_msg') {
             newSettings.broadcast_msg = extractedValue;
+          } else if (key === 'landing_page_config') {
+            newSettings.landing_page_config = extractedValue;
+          } else if (key === 'checkout_config') {
+            newSettings.checkout_config = { ...defaultCheckoutConfig, ...extractedValue };
           }
         });
 
@@ -225,6 +237,10 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
                   updated.broadcast_active = extractedValue === 'true' || extractedValue === true;
                 } else if (key === 'broadcast_msg') {
                   updated.broadcast_msg = extractedValue;
+                } else if (key === 'landing_page_config') {
+                  updated.landing_page_config = extractedValue;
+                } else if (key === 'checkout_config') {
+                  updated.checkout_config = { ...defaultCheckoutConfig, ...extractedValue };
                 }
                 return updated;
               });
@@ -249,6 +265,8 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
           signups_enabled: sys.signupsEnabled,
           broadcast_active: sys.broadcastActive,
           broadcast_msg: sys.broadcastMsg,
+          landing_page_config: getAdminLandingPageConfig(),
+          checkout_config: getAdminCheckoutConfig(),
         });
       };
 

@@ -32,8 +32,10 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
   const navigate = useNavigate();
 
-  const handleCTA = (_planId: string) => {
-    navigate('/signup');
+  const handleCTA = (planId: string) => {
+    let cleanPlan = (planId || 'pro').replace('plan-', '').toLowerCase();
+    if (cleanPlan === 'free') cleanPlan = 'starter';
+    navigate(`/checkout?plan=${cleanPlan}&billing=${isAnnual ? 'yearly' : 'monthly'}`);
   };
 
   return (
@@ -86,6 +88,13 @@ export default function Pricing() {
               ? (plan.priceAnnual !== undefined ? plan.priceAnnual : Math.round((plan.priceMonthly ?? plan.price ?? 0) * 0.8))
               : (plan.priceMonthly !== undefined ? plan.priceMonthly : (plan.price !== undefined ? plan.price : 0));
 
+            const isStarter = plan.id === 'plan-starter' || plan.id === 'plan-free' || plan.name?.toLowerCase() === 'starter' || plan.name?.toLowerCase() === 'free';
+            const planDisplayName = isStarter ? 'Starter' : plan.name;
+            const defaultButtonText = isStarter 
+              ? 'Upgrade to Starter' 
+              : `Upgrade to ${planDisplayName}`;
+            const buttonLabel = plan.buttonText || plan.ctaText || defaultButtonText;
+
             return (
               <motion.div
                 key={plan.id || plan.name}
@@ -112,9 +121,9 @@ export default function Pricing() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold text-slate-900 tracking-tight">
-                      {plan.name}
+                      {planDisplayName}
                     </h3>
-                    {plan.id === 'plan-free' && (
+                    {isStarter && (
                       <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 font-semibold text-[10px] rounded-full uppercase tracking-wider">
                         Sandbox
                       </span>
@@ -133,7 +142,7 @@ export default function Pricing() {
                   <div className="py-4">
                     <AnimatedPriceText
                       value={price}
-                      isFree={plan.id === 'plan-free'}
+                      isFree={isStarter && price === 0}
                     />
                   </div>
 
@@ -156,14 +165,14 @@ export default function Pricing() {
                       onClick={() => handleCTA(plan.id)}
                       className="w-full justify-center"
                     >
-                      {plan.buttonText || plan.ctaText || 'Upgrade to Pro'}
+                      {buttonLabel}
                     </PrimaryBrandButton>
                   ) : (
                     <SecondaryWhiteButton
                       onClick={() => handleCTA(plan.id)}
                       className="w-full justify-center"
                     >
-                      {plan.buttonText || plan.ctaText || 'Get Started'}
+                      {buttonLabel}
                     </SecondaryWhiteButton>
                   )}
                 </div>

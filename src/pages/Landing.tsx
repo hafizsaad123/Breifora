@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAppSettings } from '../context/AppSettingsContext';
+import { getAdminLandingPageConfig } from '../lib/adminSync';
 import dashboardImg from '../assets/images/dashboard.png';
 import bentocard01 from '../assets/images/bentocard01.png';
 import bentocard02 from '../assets/images/bentocard02.png';
@@ -15,6 +16,7 @@ import howitworkscard03 from '../assets/images/howitworkscard03.png';
 
 export default function Landing() {
   const { settings } = useAppSettings();
+  const cmsConfig = settings.landing_page_config || getAdminLandingPageConfig();
   const location = useLocation();
 
   // Mobile menu open state
@@ -46,13 +48,13 @@ export default function Landing() {
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Value statement paragraph lines
-  const statementLines = [
+  const statementLines = cmsConfig.showcase?.statementLines || [
     "Briefora is an AI-powered strategy engine built for high-ticket creative operators.",
     "It automatically transforms vague, chaotic client ideas into structured, production-ready design briefs and comprehensive scope documents in seconds locking down your strategy before you ever open Figma."
   ];
 
   // Calculate total words across statement lines
-  const allWords = statementLines.flatMap((line) => line.trim().split(/\s+/));
+  const allWords = statementLines.flatMap((line: string) => line.trim().split(/\s+/));
 
   // Scroll progress listener for text highlight effect
   useEffect(() => {
@@ -88,41 +90,43 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <Logo iconSize={30} />
+            <Logo iconSize={cmsConfig.header?.iconSize || 30} />
           </Link>
 
           {/* Nav Links */}
           <nav className="hidden md:flex items-center gap-8 text-xs md:text-sm font-medium text-slate-600">
-            <a href="#features" className="hover:text-slate-900 transition-colors">
-              Benefits
-            </a>
-            <a href="#how-it-works" className="hover:text-slate-900 transition-colors">
-              How It Works
-            </a>
-            <a href="#why-briefora" className="hover:text-slate-900 transition-colors">
-              Why Briefora
-            </a>
-            <a href="#pricing" className="hover:text-slate-900 transition-colors">
-              Pricing
-            </a>
-            <a href="#faq" className="hover:text-slate-900 transition-colors">
-              FAQs
-            </a>
+            {(cmsConfig.header?.navLinks || [
+              { label: 'Benefits', url: '#features' },
+              { label: 'How It Works', url: '#how-it-works' },
+              { label: 'Why Briefora', url: '#why-briefora' },
+              { label: 'Pricing', url: '#pricing' },
+              { label: 'FAQs', url: '#faq' },
+            ]).map((lnk: any, idx: number) => (
+              <a
+                key={idx}
+                href={lnk.url}
+                target={lnk.openNewTab ? '_blank' : undefined}
+                rel={lnk.openNewTab ? 'noopener noreferrer' : undefined}
+                className="hover:text-slate-900 transition-colors"
+              >
+                {lnk.label}
+              </a>
+            ))}
           </nav>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              to="/login"
+              to={cmsConfig.header?.secondaryCtaLink || '/login'}
               className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all"
             >
-              Sign in
+              {cmsConfig.header?.secondaryCtaText || 'Sign in'}
             </Link>
             <Link
-              to="/signup"
+              to={cmsConfig.header?.primaryCtaLink || '/signup'}
               className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer"
             >
-              Start for free
+              {cmsConfig.header?.primaryCtaText || 'Start for free'}
             </Link>
           </div>
 
@@ -219,18 +223,18 @@ export default function Landing() {
             <svg className="w-3.5 h-3.5 fill-current text-[#2516FF]" viewBox="0 0 24 24">
               <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
             </svg>
-            <span>{settings.hero_copy?.badge || 'AI Client Discovery for Brand Designers'}</span>
+            <span>{cmsConfig.hero?.badge || settings.hero_copy?.badge || 'AI Client Discovery for Brand Designers'}</span>
           </motion.div>
 
           {/* Title */}
           <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-slate-900 mb-4 leading-[1.25]">
-            {settings.hero_copy?.title || 'Turn Vague Client Ideas Into'}<br className="hidden md:block" />{' '}
-            <span className="text-[#2516FF]">{settings.hero_copy?.highlightTitle || 'Clear Brand Strategy'}</span>
+            {cmsConfig.hero?.title || settings.hero_copy?.title || 'Turn Vague Client Ideas Into'}<br className="hidden md:block" />{' '}
+            <span className="text-[#2516FF]">{cmsConfig.hero?.highlightTitle || settings.hero_copy?.highlightTitle || 'Clear Brand Strategy'}</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto mb-10">
-            {settings.hero_copy?.subtitle || 'Stop chasing confusing feedback and endless revisions. Briefora transforms messy client thoughts into strategic creative direction before the first concept is designed.'}
+            {cmsConfig.hero?.subtitle || settings.hero_copy?.subtitle || 'Stop chasing confusing feedback and endless revisions. Briefora transforms messy client thoughts into strategic creative direction before the first concept is designed.'}
           </p>
 
           {/* Pill CTA Buttons */}
@@ -239,13 +243,13 @@ export default function Landing() {
               to="/signup"
               className="w-full sm:w-auto bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
             >
-              {settings.hero_copy?.primaryCta || 'Start for free'}
+              {cmsConfig.hero?.primaryCta || settings.hero_copy?.primaryCta || 'Start for free'}
             </Link>
             <a
               href="#features"
               className="w-full sm:w-auto bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
             >
-              {settings.hero_copy?.secondaryCta || 'See How It Works'}
+              {cmsConfig.hero?.secondaryCta || settings.hero_copy?.secondaryCta || 'See How It Works'}
             </a>
           </div>
 
@@ -310,124 +314,50 @@ export default function Landing() {
             <svg className="w-3.5 h-3.5 fill-current text-[#2516FF]" viewBox="0 0 24 24">
               <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
             </svg>
-            <span>Benefits</span>
+            <span>{cmsConfig.features?.eyebrow || 'Benefits'}</span>
           </div>
 
           <h2 className="text-3xl md:text-5xl font-semibold text-slate-900 tracking-tight leading-[1.25] mb-4">
-            Engineered for Seamless Design Discovery
+            {cmsConfig.features?.title || 'Engineered for Seamless Design Discovery'}
           </h2>
           <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto mb-16">
-            Streamline client onboarding, eliminate ambiguity, and protect your profitability.
+            {cmsConfig.features?.description || 'Streamline client onboarding, eliminate ambiguity, and protect your profitability.'}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8 text-left">
-            {/* Card 1 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={bentocard04}
-                  alt="Zero-Friction Client Discovery"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  Zero-Friction Client Discovery
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Send a clean interactive link instead of a messy PDF questionnaire. Clients enjoy filling it out while you gather precise answers.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Card 2 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={bentocard02}
-                  alt="Kill Scope Creep"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  Kill Scope Creep
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Lock down deliverables and project boundaries before starting. Protect your margins from out-of-bounds requests.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Card 3 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={bentocard03}
-                  alt="No Client Accounts, Ever"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  No Client Accounts, Ever
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Clients don't need to sign up or create passwords. They just click your branded link and collaborate immediately.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Card 4 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={bentocard01}
-                  alt="AI-Powered Brand Mapping"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  AI-Powered Brand Mapping
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Transform unstructured notes into comprehensive design systems, target user personas, and visual directions automatically.
-                </p>
-              </div>
-            </motion.div>
+            {(cmsConfig.features?.cards || [
+              { title: 'Zero-Friction Client Discovery', description: 'Send a clean interactive link instead of a messy PDF questionnaire. Clients enjoy filling it out while you gather precise answers.', imagePlaceholder: bentocard04 },
+              { title: 'Kill Scope Creep', description: 'Lock down deliverables and project boundaries before starting. Protect your margins from out-of-bounds requests.', imagePlaceholder: bentocard02 },
+              { title: 'No Client Accounts, Ever', description: 'Clients don\'t need to sign up or create passwords. They just click your branded link and collaborate immediately.', imagePlaceholder: bentocard03 },
+              { title: 'AI-Powered Brand Mapping', description: 'Transform unstructured notes into comprehensive design systems, target user personas, and visual directions automatically.', imagePlaceholder: bentocard01 },
+            ]).map((card: any, idx: number) => (
+              <motion.div 
+                key={idx}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
+              >
+                <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
+                  <img
+                    src={card.imagePlaceholder || (idx === 0 ? bentocard04 : idx === 1 ? bentocard02 : idx === 2 ? bentocard03 : bentocard01)}
+                    alt={card.title}
+                    className="w-full h-auto object-contain max-h-[220px]"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80';
+                    }}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
+                    {card.title}
+                  </h3>
+                  <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
+                    {card.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -444,102 +374,48 @@ export default function Landing() {
           </div>
 
           <h2 className="text-3xl md:text-5xl font-semibold text-slate-900 tracking-tight leading-[1.25] mb-4">
-            Lock Down the Strategy Before You Open Figma
+            {cmsConfig.workflow?.title || 'Lock Down the Strategy Before You Open Figma'}
           </h2>
           <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto mb-16">
-            A seamless three-step workflow designed to save you hours of alignment meetings.
+            {cmsConfig.workflow?.subtitle || 'A seamless three-step workflow designed to save you hours of alignment meetings.'}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 text-left">
-            {/* Step 1 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={howitworkscard03}
-                  alt="Share a Unique Link"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <span className="bg-[#2516FF] text-white text-xs px-3 py-1 rounded-full font-semibold inline-block mb-4">
-                  Step 1
-                </span>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  Share a Unique Link
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Send your custom intake link to the client via Slack, email, or WhatsApp.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Step 2 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={howitworkscard02}
-                  alt="Clean File Intake"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <span className="bg-[#2516FF] text-white text-xs px-3 py-1 rounded-full font-semibold inline-block mb-4">
-                  Step 2
-                </span>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  Client Fills the Intake
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  AI guides the client through structured questions to extract exact design intent.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Step 3 */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
-            >
-              <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
-                <img
-                  src={howitworkscard01}
-                  alt="A Walkthrough Brief"
-                  className="w-full h-auto object-contain max-h-[220px]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div>
-                <span className="bg-[#2516FF] text-white text-xs px-3 py-1 rounded-full font-semibold inline-block mb-4">
-                  Step 3
-                </span>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
-                  AI Writes the Brief
-                </h3>
-                <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
-                  Get an automated brand brief ready for client sign-off before design begins.
-                </p>
-              </div>
-            </motion.div>
+            {(cmsConfig.workflow?.steps || [
+              { stepLabel: 'Step 1', title: 'Share a Unique Link', description: 'Send your custom intake link to the client via Slack, email, or WhatsApp.' },
+              { stepLabel: 'Step 2', title: 'Client Fills the Intake', description: 'AI guides the client through structured questions to extract exact design intent.' },
+              { stepLabel: 'Step 3', title: 'AI Writes the Brief', description: 'Get an automated brand brief ready for client sign-off before design begins.' },
+            ]).map((step: any, idx: number) => (
+              <motion.div 
+                key={idx}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="bg-[#FFFFFF] rounded-3xl border border-slate-100 hover:border-slate-300/80 hover:shadow-xl hover:shadow-slate-100 p-6 md:p-8 flex flex-col justify-between transition-all duration-300"
+              >
+                <div className="bg-[#FEFEFE] rounded-2xl overflow-hidden mb-6 flex items-center justify-center p-2 border border-slate-100/60 min-h-[220px]">
+                  <img
+                    src={step.image || (idx === 0 ? howitworkscard03 : idx === 1 ? howitworkscard02 : howitworkscard01)}
+                    alt={step.title}
+                    className="w-full h-auto object-contain max-h-[220px]"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80';
+                    }}
+                  />
+                </div>
+                <div>
+                  <span className="bg-[#2516FF] text-white text-xs px-3 py-1 rounded-full font-semibold inline-block mb-4">
+                    {step.stepLabel || `Step ${idx + 1}`}
+                  </span>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2 tracking-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -557,11 +433,10 @@ export default function Landing() {
             </div>
 
             <h2 className="text-3xl md:text-5xl font-semibold text-slate-900 tracking-tight leading-[1.25] mb-4">
-              Stop Collecting Raw Data. <br />
-              Start Extracting Creative Direction
+              {cmsConfig.comparison?.title || 'Stop Collecting Raw Data. Start Extracting Creative Direction'}
             </h2>
             <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              Generic forms collect raw data. Briefora extracts actionable creative direction. See the difference.
+              {cmsConfig.comparison?.subtitle || 'Generic forms collect raw data. Briefora extracts actionable creative direction. See the difference.'}
             </p>
           </div>
 
@@ -576,117 +451,31 @@ export default function Landing() {
                 <Logo iconSize={24} />
               </div>
 
-              {/* Row 1 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Gathers basic text entries</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Extracts true creative intent</span>
-              </div>
-
-              {/* Row 2 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Forced signups or account setup</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Zero login, zero friction</span>
-              </div>
-
-              {/* Row 3 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Hours of manual brief drafting</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Instant AI-generated blueprints</span>
-              </div>
-
-              {/* Row 4 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Ignores aesthetic context</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Translates stylistic adjectives</span>
-              </div>
-
-              {/* Row 5 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Overwhelming, endless form fields</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>10 plain-language visual prompts</span>
-              </div>
-
-              {/* Row 6 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Invites vague, unbilled direction edits</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Halts early scope creep completely</span>
-              </div>
-
-              {/* Row 7 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Messy email text or raw spreadsheets</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Live workspace & clean PDF exports</span>
-              </div>
-
-              {/* Row 8 */}
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 text-center border-b border-slate-100">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✕
-                </span>
-                <span>Generic, low-end template feel</span>
-              </div>
-              <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 text-center border-b border-slate-100">
-                <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
-                  ✓
-                </span>
-                <span>Premium high-ticket studio vibe</span>
-              </div>
+              {(cmsConfig.comparison?.rows || [
+                { others: 'Gathers basic text entries', briefora: 'Extracts true creative intent' },
+                { others: 'Forced signups or account setup', briefora: 'Zero login, zero friction' },
+                { others: 'Hours of manual brief drafting', briefora: 'Instant AI-generated blueprints' },
+                { others: 'Ignores aesthetic context', briefora: 'Translates stylistic adjectives' },
+                { others: 'Overwhelming, endless form fields', briefora: '10 plain-language visual prompts' },
+                { others: 'Invites vague, unbilled direction edits', briefora: 'Halts early scope creep completely' },
+                { others: 'Messy email text or raw spreadsheets', briefora: 'Live workspace & clean PDF exports' },
+                { others: 'Generic, low-end template feel', briefora: 'Premium high-ticket studio vibe' },
+              ]).map((row: any, rIdx: number) => (
+                <div key={rIdx} className="contents">
+                  <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-500 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                    <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
+                      ✕
+                    </span>
+                    <span>{row.others}</span>
+                  </div>
+                  <div className="p-3 sm:p-5 text-xs sm:text-sm md:text-base font-normal text-slate-900 bg-[#2516FF]/5 flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-100 text-center">
+                    <span className="w-4 h-4 sm:w-5 h-5 rounded-full bg-[#2516FF] text-white flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
+                      ✓
+                    </span>
+                    <span>{row.briefora}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -706,10 +495,10 @@ export default function Landing() {
             </div>
 
             <h2 className="text-3xl md:text-5xl font-semibold text-slate-900 tracking-tight leading-[1.25] mb-4">
-              Invest in Creative Clarity. <br /> Protect Your Margin.
+              {cmsConfig.pricing?.title || 'Invest in Creative Clarity. Protect Your Margin.'}
             </h2>
             <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              Choose the plan that fits your creative workflow.
+              {cmsConfig.pricing?.subtitle || 'Choose the plan that fits your creative workflow.'}
             </p>
           </div>
 
@@ -750,8 +539,8 @@ export default function Landing() {
 
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch pt-4">
-            {(settings.pricing || []).map((plan) => {
-              const isPro = plan.name.toLowerCase() === 'pro';
+            {(cmsConfig.pricing?.plans || settings.pricing || []).map((plan: any) => {
+              const isPro = plan.name?.toLowerCase() === 'pro';
               const price = isYearly 
                 ? (plan.priceAnnual !== undefined ? plan.priceAnnual : Math.round(plan.priceMonthly * 0.8)) 
                 : plan.priceMonthly;
@@ -873,16 +662,16 @@ export default function Landing() {
             </div>
 
             <h2 className="text-3xl md:text-5xl font-semibold text-slate-900 tracking-tight leading-[1.25] mb-4">
-              Got Questions? <br /> We Have Clear Answers.
+              {cmsConfig.faq?.title || 'Got Questions? We Have Clear Answers.'}
             </h2>
             <p className="text-base md:text-lg font-medium text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              Everything you need to know about how Briefora optimizes your design client onboarding workflow.
+              {cmsConfig.faq?.subtitle || 'Everything you need to know about how Briefora optimizes your design client onboarding workflow.'}
             </p>
           </div>
 
           {/* FAQ List Container */}
           <div className="space-y-4">
-            {(settings.faqs || []).map((faq, index) => (
+            {(cmsConfig.faq?.items || settings.faqs || []).map((faq: any, index: number) => (
               <motion.div 
                 key={index}
                 layout
@@ -943,7 +732,7 @@ export default function Landing() {
                   <Logo iconSize={30} />
                 </Link>
                 <p className="text-sm md:text-base font-normal text-slate-500 leading-relaxed max-w-sm">
-                  The AI-powered briefing system for creative agencies and freelancers. Streamline discovery, eliminate scope creep, and get client alignment fast.
+                  {cmsConfig.footer?.brandDescription || 'The AI-powered briefing system for creative agencies and freelancers. Streamline discovery, eliminate scope creep, and get client alignment fast.'}
                 </p>
               </div>
             </div>
@@ -951,63 +740,47 @@ export default function Landing() {
             {/* Links Column: Pages */}
             <div className="md:col-span-3">
               <ul className="space-y-3.5 text-sm font-normal text-slate-500">
-                <li>
-                  <a href="#features" className="hover:text-slate-900 transition-colors">
-                    Benefits
-                  </a>
-                </li>
-                <li>
-                  <a href="#how-it-works" className="hover:text-slate-900 transition-colors">
-                    How it Works
-                  </a>
-                </li>
-                <li>
-                  <a href="#why-briefora" className="hover:text-slate-900 transition-colors">
-                    Why Briefora
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="hover:text-slate-900 transition-colors">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-slate-900 transition-colors">
-                    FAQs
-                  </a>
-                </li>
+                {(cmsConfig.footer?.navLinks || [
+                  { label: 'Benefits', url: '#features' },
+                  { label: 'How it Works', url: '#how-it-works' },
+                  { label: 'Why Briefora', url: '#why-briefora' },
+                  { label: 'Pricing', url: '#pricing' },
+                  { label: 'FAQs', url: '#faq' },
+                ]).map((lnk: any, idx: number) => (
+                  <li key={idx}>
+                    <a href={lnk.url} className="hover:text-slate-900 transition-colors">
+                      {lnk.label}
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
 
             {/* Policies Column */}
             <div className="md:col-span-3 flex flex-col justify-start">
               <ul className="space-y-3.5 text-sm font-normal text-slate-500">
-                <li>
-                  <Link to="/privacypolicy" className="hover:text-slate-900 transition-colors">
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/usagepolicy" className="hover:text-slate-900 transition-colors">
-                    Usage Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/termsofservice" className="hover:text-slate-900 transition-colors">
-                    Terms of Service
-                  </Link>
-                </li>
+                {(cmsConfig.footer?.policyLinks || [
+                  { label: 'Privacy Policy', url: '/privacypolicy' },
+                  { label: 'Usage Policy', url: '/usagepolicy' },
+                  { label: 'Terms of Service', url: '/termsofservice' },
+                ]).map((lnk: any, idx: number) => (
+                  <li key={idx}>
+                    <Link to={lnk.url} className="hover:text-slate-900 transition-colors">
+                      {lnk.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-            <p>&copy; 2026 Briefora. All rights reserved.</p>
+            <p>{cmsConfig.footer?.copyrightText || '© 2026 Briefora. All rights reserved.'}</p>
 
             {/* LinkedIn Logo Button */}
             <a
-              href="https://www.linkedin.com/company/breifora/posts/?feedView=all"
+              href={cmsConfig.footer?.socialLink || "https://www.linkedin.com/company/breifora/posts/?feedView=all"}
               target="_blank"
               rel="noopener noreferrer"
               className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:border-slate-900 transition-colors shrink-0"

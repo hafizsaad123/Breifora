@@ -138,8 +138,8 @@ export const comparisonMatrix: ComparisonRow[] = [
 
 export const pricingPlans: PricingPlan[] = [
   {
-    id: 'plan-free',
-    name: 'Free',
+    id: 'plan-starter',
+    name: 'Starter',
     description: 'For independent creators establishing their onboarding workflow and protecting initial project boundaries.',
     priceMonthly: 0,
     priceAnnual: 0,
@@ -150,7 +150,7 @@ export const pricingPlans: PricingPlan[] = [
       'Elegant, live-updating browser blueprint workspace',
       'Direct copy-paste raw data exports & markdown views',
     ],
-    ctaText: 'Use Breifora for Free',
+    ctaText: 'Upgrade to Starter',
     color: 'slate',
   },
   {

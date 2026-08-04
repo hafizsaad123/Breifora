@@ -7,20 +7,23 @@ import {
   FileText, LogOut, Key, RefreshCw, Layers, X, 
   ChevronRight, CreditCard, Save, Globe, ExternalLink,
   Menu, Inbox, Star, MessageSquare, Briefcase, PlusCircle,
-  Clock, Eye, Sliders, Check, HelpCircle
+  Clock, Eye, Sliders, Check, HelpCircle, ChevronDown, Sparkles, Laptop, Smartphone,
+  Wallet, MessageCircle, DollarSign, ArrowUp, ArrowDown
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { pricingPlans as defaultPricingPlans, faqList as defaultFaqs, testimonialsList as defaultTestimonials } from '../data';
 import { 
   getAdminHeroCopy, getAdminPrivacyPolicy, 
-  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, fetchSyncedData, supabase
+  getAdminUsagePolicy, getAdminTermsOfService, syncAndSaveData, fetchSyncedData, supabase,
+  defaultLandingPageConfig, getAdminLandingPageConfig,
+  getAdminCheckoutConfig, CheckoutConfig, defaultCheckoutConfig
 } from '../lib/adminSync';
 
 interface AdminUser {
   id: string;
   name: string;
   email: string;
-  plan: 'Free' | 'Pro' | 'Studio';
+  plan: 'Starter' | 'Pro' | 'Studio' | 'Free';
   status: 'Active' | 'Suspended';
   createdAt: string;
   onboarded: boolean;
@@ -78,7 +81,11 @@ export default function AdminPortal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'system' | 'pricing' | 'hero' | 'cms' | 'legal' | 'users' | 'briefs' | 'submissions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'system' | 'pricing' | 'hero' | 'cms' | 'legal' | 'users' | 'briefs' | 'submissions' | 'checkout'>('overview');
+  
+  // Checkout & Payment Config State
+  const [checkoutConfig, setCheckoutConfig] = useState<CheckoutConfig>(getAdminCheckoutConfig);
+  const [isCheckoutSaving, setIsCheckoutSaving] = useState(false);
   
   // Mobile Sidebar State
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -103,8 +110,8 @@ export default function AdminPortal() {
       { id: 'usr-101', name: 'Devin Miller', email: 'devin@brandconsulting.io', plan: 'Studio', status: 'Active', createdAt: '2025-06-12', onboarded: true, briefsCount: 14 },
       { id: 'usr-102', name: 'Elena Rostova', email: 'elena@rostovastudio.com', plan: 'Pro', status: 'Active', createdAt: '2025-06-28', onboarded: true, briefsCount: 8 },
       { id: 'usr-103', name: 'Marcus Vance', email: 'marcus@vancedesign.co', plan: 'Pro', status: 'Active', createdAt: '2025-07-02', onboarded: true, briefsCount: 5 },
-      { id: 'usr-104', name: 'Sarah Jenkins', email: 'sarah@freelancedesign.net', plan: 'Free', status: 'Active', createdAt: '2025-07-15', onboarded: false, briefsCount: 1 },
-      { id: 'usr-105', name: 'Alex Rivera', email: 'alex@riveradesign.org', plan: 'Free', status: 'Active', createdAt: '2025-07-20', onboarded: true, briefsCount: 2 },
+      { id: 'usr-104', name: 'Sarah Jenkins', email: 'sarah@freelancedesign.net', plan: 'Starter', status: 'Active', createdAt: '2025-07-15', onboarded: false, briefsCount: 1 },
+      { id: 'usr-105', name: 'Alex Rivera', email: 'alex@riveradesign.org', plan: 'Starter', status: 'Active', createdAt: '2025-07-20', onboarded: true, briefsCount: 2 },
       { id: 'usr-106', name: 'Taylor Swift', email: 'taylor@swiftbite.app', plan: 'Studio', status: 'Active', createdAt: '2025-07-25', onboarded: true, briefsCount: 11 },
     ];
   });
@@ -134,6 +141,22 @@ export default function AdminPortal() {
     return defaultTestimonials;
   });
   const [heroCopy, setHeroCopy] = useState(getAdminHeroCopy);
+  const [landingPageConfig, setLandingPageConfig] = useState<any>(() => {
+    return getAdminLandingPageConfig();
+  });
+  const updateCmsField = (section: string, field: string, value: any) => {
+    setLandingPageConfig((prev: any) => {
+      const updated = { ...prev };
+      updated[section] = {
+        ...(updated[section] || {}),
+        [field]: value
+      };
+      return updated;
+    });
+  };
+  const [openCmsSection, setOpenCmsSection] = useState<string | null>('header');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   // System Toggles
   const [maintenanceMode, setMaintenanceMode] = useState<boolean>(() => {
@@ -191,7 +214,7 @@ export default function AdminPortal() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPlan, setNewUserPlan] = useState<'Free' | 'Pro' | 'Studio'>('Pro');
+  const [newUserPlan, setNewUserPlan] = useState<'Starter' | 'Pro' | 'Studio' | 'Free'>('Pro');
 
   const [isAddFaqOpen, setIsAddFaqOpen] = useState(false);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
@@ -298,6 +321,22 @@ export default function AdminPortal() {
     }
   };
 
+  const [isCmsSaving, setIsCmsSaving] = useState(false);
+  const handleSaveCmsConfig = async (config = landingPageConfig) => {
+    setIsCmsSaving(true);
+    try {
+      localStorage.setItem('briefora_admin_landing_page_config', JSON.stringify(config));
+      await syncAndSaveData('landing_page_config', config);
+      addAuditLog('UPDATE_HOMEPAGE_CMS', 'Entire Homepage Content');
+      showToast('Home Page CMS Published and Saved Successfully!');
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving CMS configurations');
+    } finally {
+      setIsCmsSaving(false);
+    }
+  };
+
   const handleSaveFaqReviews = async () => {
     setIsFaqReviewsSaving(true);
     try {
@@ -334,6 +373,21 @@ export default function AdminPortal() {
       showToast('Error syncing legal policies');
     } finally {
       setIsLegalSaving(false);
+    }
+  };
+
+  const handleSaveCheckoutConfig = async () => {
+    setIsCheckoutSaving(true);
+    try {
+      localStorage.setItem('briefora_admin_checkout_config', JSON.stringify(checkoutConfig));
+      await syncAndSaveData('checkout_config', checkoutConfig);
+      addAuditLog('UPDATE_CHECKOUT_CONFIG', 'Checkout & Payment Settings');
+      showToast('Checkout Settings Saved & Synced!');
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving checkout configurations');
+    } finally {
+      setIsCheckoutSaving(false);
     }
   };
 
@@ -567,10 +621,10 @@ export default function AdminPortal() {
       ]
     },
     {
-      title: 'Website Content',
+      title: 'Landing Page & Checkout',
       items: [
-        { id: 'hero', label: 'Hero Copy & CTA', icon: Globe },
-        { id: 'cms', label: 'FAQs & Reviews', icon: Layers },
+        { id: 'cms', label: 'Home Page CMS', icon: Layers },
+        { id: 'checkout', label: 'Checkout & Payments', icon: Wallet },
         { id: 'legal', label: 'Legal Policies', icon: FileText },
       ]
     }
@@ -850,12 +904,12 @@ export default function AdminPortal() {
               {activeTab === 'overview' && 'Dashboard Overview'}
               {activeTab === 'system' && 'Global System Panel'}
               {activeTab === 'pricing' && 'Pricing & Plans Editor'}
-              {activeTab === 'hero' && 'Hero Section Settings'}
-              {activeTab === 'cms' && 'FAQs & Testimonial Reviews'}
+              {activeTab === 'cms' && 'Home Page CMS'}
               {activeTab === 'legal' && 'Legal Policy Editor'}
               {activeTab === 'users' && 'User Management'}
               {activeTab === 'briefs' && 'Active Client Briefs'}
               {activeTab === 'submissions' && 'Live Inquiries Feed'}
+              {activeTab === 'checkout' && 'Checkout & Payment Settings'}
             </h1>
           </div>
 
@@ -1214,234 +1268,1052 @@ export default function AdminPortal() {
           </div>
         )}
 
-        {/* 4. HERO SECTION SETTINGS */}
-        {activeTab === 'hero' && (
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Landing Page Hero & CTA Settings</h2>
-                <p className="text-slate-500 text-xs mt-1">Configure live text titles, high-impact gradient keywords, and button actions.</p>
-              </div>
-              <button 
-                onClick={handleSaveHeroCopy}
-                disabled={isHeroSaving}
-                className="px-5 py-2.5 bg-[#2516FF] hover:bg-[#1d11cc] disabled:bg-primary/40 text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-[#2516FF]/10 transition-colors self-start sm:self-auto"
-              >
-                {isHeroSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{isHeroSaving ? 'Saving...' : 'Save Hero Copy'}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Form parameters */}
-              <div className="space-y-4 lg:col-span-7">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Eyebrow Badge Text</label>
-                  <input
-                    type="text"
-                    value={heroCopy.badge}
-                    onChange={(e) => setHeroCopy({ ...heroCopy, badge: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Main Title Left Text</label>
-                  <input
-                    type="text"
-                    value={heroCopy.title}
-                    onChange={(e) => setHeroCopy({ ...heroCopy, title: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Highlighted Gradient Title Keywords</label>
-                  <input
-                    type="text"
-                    value={heroCopy.highlightTitle}
-                    onChange={(e) => setHeroCopy({ ...heroCopy, highlightTitle: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-primary font-black focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Subheading Description Copy</label>
-                  <textarea
-                    rows={4}
-                    value={heroCopy.subtitle}
-                    onChange={(e) => setHeroCopy({ ...heroCopy, subtitle: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-600 leading-relaxed focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Primary Button CTA Text</label>
-                    <input
-                      type="text"
-                      value={heroCopy.primaryCta}
-                      onChange={(e) => setHeroCopy({ ...heroCopy, primaryCta: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Secondary Button CTA Text</label>
-                    <input
-                      type="text"
-                      value={heroCopy.secondaryCta}
-                      onChange={(e) => setHeroCopy({ ...heroCopy, secondaryCta: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Visual Interactive Preview */}
-              <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4 shadow-xs">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block border-b border-slate-200/60 pb-2">LIVE COMPOSITION PREVIEW</span>
-                <div className="space-y-4 py-4">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-light text-primary text-[9px] font-black tracking-widest uppercase border border-primary/20">
-                    {heroCopy.badge || 'AI CLIENT DISCOVERY'}
-                  </span>
-                  
-                  <h3 className="text-xl font-extrabold text-slate-900 leading-tight">
-                    {heroCopy.title || 'Turn Ideas Into'}{' '}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2516FF] to-[#1d11cc]">
-                      {heroCopy.highlightTitle || 'Clear Creative Blueprints'}
-                    </span>
-                  </h3>
-                  
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    {heroCopy.subtitle || 'Transforms vague client feedback into clean vector briefs instantly.'}
-                  </p>
-
-                  <div className="flex gap-2.5 pt-2">
-                    <button className="px-4 py-2 bg-[#2516FF] text-white text-[11px] font-bold rounded-lg shadow-md shadow-[#2516FF]/10">
-                      {heroCopy.primaryCta || 'Start for free'}
-                    </button>
-                    <button className="px-4 py-2 bg-white text-slate-700 text-[11px] font-semibold rounded-lg border border-slate-200 shadow-2xs hover:bg-slate-50 transition-colors">
-                      {heroCopy.secondaryCta || 'See How It Works'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 5. FAQS & TESTIMONIAL REVIEWS */}
+        {/* 4. HOME PAGE CMS (MODULAR ACCORDION & PREVIEW ENGINE) */}
         {activeTab === 'cms' && (
           <div className="space-y-8">
             
-            {/* Top Draft Notification & Save Bar */}
-            <div className="bg-primary-light/60 border border-primary/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-primary-light/80 text-primary rounded-xl">
-                  <Star className="w-5 h-5 fill-primary-light" />
+            {/* Top CMS Status & Master Actions Bar */}
+            <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-[#2516FF]/10 text-[#2516FF] rounded-2xl shrink-0">
+                  <Sparkles className="w-6 h-6 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-slate-900">CMS Content Draft Manager</h4>
-                  <p className="text-[11px] text-primary font-medium mt-0.5">FAQs and customer reviews are stored in local drafts. Click Save to publish changes.</p>
+                  <h4 className="text-base font-black text-slate-900">Modular Landing Page CMS</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                    Directly control all visual layouts, copy segments, features, pricing, FAQs, and links on your homepage. 
+                    Manage drafts locally, preview them in the device simulator, and publish when ready.
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={handleSaveFaqReviews}
-                disabled={isFaqReviewsSaving}
-                className="w-full sm:w-auto px-6 py-2.5 bg-[#2516FF] hover:bg-[#1d11cc] disabled:bg-primary/40 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#2516FF]/10 transition-colors shrink-0"
-              >
-                {isFaqReviewsSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>{isFaqReviewsSaving ? 'Publishing...' : 'Save CMS Changes'}</span>
-              </button>
-            </div>
-
-            {/* FAQs */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Frequently Asked Questions</h2>
-                  <p className="text-slate-500 text-xs mt-1">Add, structure, and dynamically remove platform query items.</p>
-                </div>
-                <button 
-                  onClick={() => setIsAddFaqOpen(true)}
-                  className="px-4 py-2 bg-[#2516FF] hover:bg-[#1d11cc] text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+              <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="flex-1 md:flex-none px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer border border-slate-200/60 transition-all"
                 >
-                  <Plus className="w-4 h-4" /> Add FAQ Item
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Draft</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveCmsConfig(landingPageConfig)}
+                  disabled={isCmsSaving}
+                  className="flex-1 md:flex-none px-6 py-2.5 bg-[#2516FF] hover:bg-[#1d11cc] disabled:bg-slate-300 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#2516FF]/10 transition-colors"
+                >
+                  {isCmsSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>{isCmsSaving ? 'Publishing...' : 'Publish Live'}</span>
                 </button>
               </div>
+            </div>
 
-              <div className="space-y-4 max-h-[400px] overflow-y-auto scrollbar-thin pr-1">
-                {faqs.map((faq, idx) => (
-                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl flex justify-between items-start gap-4 shadow-2xs">
-                    <div className="space-y-1.5 flex-1">
-                      <div className="font-bold text-xs text-slate-900">Q: {faq.question || faq.q}</div>
-                      <div className="text-xs text-slate-600 leading-relaxed">A: {faq.answer || faq.a}</div>
+            {/* COLLAPSIBLE ACCORDION FOR ALL 9 SECTIONS */}
+            <div className="space-y-4">
+              
+              {/* 1. Header / Navigation Bar */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'header' ? null : 'header')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">1</span>
+                    Header & Navigation Bar
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'header' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'header' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Logo Branding Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.header?.logoText || ''}
+                          onChange={(e) => updateCmsField('header', 'logoText', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Logo Icon Size</label>
+                        <input
+                          type="number"
+                          value={landingPageConfig.header?.iconSize || 30}
+                          onChange={(e) => updateCmsField('header', 'iconSize', Number(e.target.value))}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => handleDeleteFaq(idx)}
-                      className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors hover:bg-rose-50 rounded-lg"
-                      title="Delete FAQ"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Testimonials Editor */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Testimonials & Client Reviews</h2>
-                  <p className="text-slate-500 text-xs mt-1">Review live quotes and manage testimonials displayed on the homepage.</p>
-                </div>
-                <button 
-                  onClick={() => setIsAddReviewOpen(true)}
-                  className="px-4 py-2 bg-[#2516FF] hover:bg-[#1d11cc] text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Add Review
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {testimonials.map((test) => (
-                  <div key={test.id} className="p-5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col justify-between gap-4 shadow-2xs">
+                    {/* Navigation Links list */}
                     <div className="space-y-3">
-                      <div className="flex items-center gap-1 text-amber-400">
-                        {[...Array(test.rating || 5)].map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Header Links</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = landingPageConfig.header?.navLinks || [];
+                            updateCmsField('header', 'navLinks', [...current, { label: 'New Link', url: '#', openNewTab: false }]);
+                          }}
+                          className="text-[#2516FF] hover:text-[#1d11cc] text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Link
+                        </button>
+                      </div>
+                      <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2">
+                        {(landingPageConfig.header?.navLinks || []).map((lnk: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl">
+                            <input
+                              type="text"
+                              placeholder="Label"
+                              value={lnk.label}
+                              onChange={(e) => {
+                                const current = [...landingPageConfig.header.navLinks];
+                                current[idx].label = e.target.value;
+                                updateCmsField('header', 'navLinks', current);
+                              }}
+                              className="flex-1 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs"
+                            />
+                            <input
+                              type="text"
+                              placeholder="URL (e.g. #pricing)"
+                              value={lnk.url}
+                              onChange={(e) => {
+                                const current = [...landingPageConfig.header.navLinks];
+                                current[idx].url = e.target.value;
+                                updateCmsField('header', 'navLinks', current);
+                              }}
+                              className="flex-1 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = landingPageConfig.header.navLinks.filter((_: any, i: number) => i !== idx);
+                                updateCmsField('header', 'navLinks', current);
+                              }}
+                              className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         ))}
                       </div>
-                      <p className="text-xs text-slate-700 italic leading-relaxed">
-                        "{test.quote}"
-                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-200/60 pt-3">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={test.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces'} 
-                          alt={test.author} 
-                          className="w-8 h-8 rounded-full border border-slate-200 object-cover"
-                          referrerPolicy="no-referrer"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Header CTA Primary Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.header?.primaryCtaText || ''}
+                          onChange={(e) => updateCmsField('header', 'primaryCtaText', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
                         />
-                        <div>
-                          <div className="text-xs font-bold text-slate-900">{test.author}</div>
-                          <div className="text-[10px] text-slate-500">{test.role}</div>
-                        </div>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteReview(test.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 hover:bg-rose-50 rounded-lg transition-colors"
-                        title="Remove Review"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Header CTA Primary Link</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.header?.primaryCtaLink || ''}
+                          onChange={(e) => updateCmsField('header', 'primaryCtaLink', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
 
+              {/* 2. Hero Section */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'hero' ? null : 'hero')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">2</span>
+                    Hero Section
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'hero' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'hero' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Eyebrow Badge Text</label>
+                      <input
+                        type="text"
+                        value={landingPageConfig.hero?.badge || ''}
+                        onChange={(e) => updateCmsField('hero', 'badge', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Main Title Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.hero?.title || ''}
+                          onChange={(e) => updateCmsField('hero', 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Highlight Gradient Words</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.hero?.highlightTitle || ''}
+                          onChange={(e) => updateCmsField('hero', 'highlightTitle', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Subheading Copy</label>
+                      <textarea
+                        rows={3}
+                        value={landingPageConfig.hero?.subtitle || ''}
+                        onChange={(e) => updateCmsField('hero', 'subtitle', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-normal leading-relaxed"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Primary CTA Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.hero?.primaryCta || ''}
+                          onChange={(e) => updateCmsField('hero', 'primaryCta', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Secondary CTA Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.hero?.secondaryCta || ''}
+                          onChange={(e) => updateCmsField('hero', 'secondaryCta', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Product Pitch & Feature Highlights */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'features' ? null : 'features')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">3</span>
+                    Product Pitch & Features
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'features' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'features' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Section Eyebrow</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.features?.eyebrow || ''}
+                          onChange={(e) => updateCmsField('features', 'eyebrow', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Section Title</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.features?.title || ''}
+                          onChange={(e) => updateCmsField('features', 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Section Description</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.features?.description || ''}
+                          onChange={(e) => updateCmsField('features', 'description', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Features list */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Feature Highlight Cards</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = landingPageConfig.features?.cards || [];
+                            updateCmsField('features', 'cards', [...current, { title: 'New Benefit', description: 'Brief explanation...', imagePlaceholder: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800' }]);
+                          }}
+                          className="text-[#2516FF] hover:text-[#1d11cc] text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Benefit Card
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[350px] overflow-y-auto pr-2">
+                        {(landingPageConfig.features?.cards || []).map((crd: any, idx: number) => (
+                          <div key={idx} className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = landingPageConfig.features.cards.filter((_: any, i: number) => i !== idx);
+                                updateCmsField('features', 'cards', current);
+                              }}
+                              className="absolute top-3 right-3 text-slate-400 hover:text-rose-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div>
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Card Title</label>
+                              <input
+                                type="text"
+                                value={crd.title}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.features.cards];
+                                  current[idx].title = e.target.value;
+                                  updateCmsField('features', 'cards', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs font-bold mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Card Description</label>
+                              <textarea
+                                value={crd.description}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.features.cards];
+                                  current[idx].description = e.target.value;
+                                  updateCmsField('features', 'cards', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs font-normal mt-1 leading-relaxed"
+                                rows={2}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Image Fallback URL</label>
+                              <input
+                                type="text"
+                                value={crd.imagePlaceholder || ''}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.features.cards];
+                                  current[idx].imagePlaceholder = e.target.value;
+                                  updateCmsField('features', 'cards', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. How It Works / Workflow Engine */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'workflow' ? null : 'workflow')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">4</span>
+                    How It Works / Workflow Steps
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'workflow' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'workflow' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Workflow Section Title</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.workflow?.title || ''}
+                          onChange={(e) => updateCmsField('workflow', 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Workflow Section Subtitle</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.workflow?.subtitle || ''}
+                          onChange={(e) => updateCmsField('workflow', 'subtitle', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Step Cards List */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Intake Workflow Steps</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = landingPageConfig.workflow?.steps || [];
+                            updateCmsField('workflow', 'steps', [...current, { stepLabel: `Step ${current.length + 1}`, title: 'New Step Title', description: 'Action details...' }]);
+                          }}
+                          className="text-[#2516FF] hover:text-[#1d11cc] text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Step
+                        </button>
+                      </div>
+                      <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+                        {(landingPageConfig.workflow?.steps || []).map((stp: any, idx: number) => (
+                          <div key={idx} className="flex gap-4 p-4 bg-white border border-slate-200 rounded-xl relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = landingPageConfig.workflow.steps.filter((_: any, i: number) => i !== idx);
+                                updateCmsField('workflow', 'steps', current);
+                              }}
+                              className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="w-20 shrink-0">
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Badge</label>
+                              <input
+                                type="text"
+                                value={stp.stepLabel}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.workflow.steps];
+                                  current[idx].stepLabel = e.target.value;
+                                  updateCmsField('workflow', 'steps', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2 py-1 text-xs text-center font-bold mt-1"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <label className="block text-[9px] font-black uppercase text-slate-400">Step Heading</label>
+                                <input
+                                  type="text"
+                                  value={stp.title}
+                                  onChange={(e) => {
+                                    const current = [...landingPageConfig.workflow.steps];
+                                    current[idx].title = e.target.value;
+                                    updateCmsField('workflow', 'steps', current);
+                                  }}
+                                  className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1 text-xs font-bold mt-1"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[9px] font-black uppercase text-slate-400">Step Explanation</label>
+                                <input
+                                  type="text"
+                                  value={stp.description}
+                                  onChange={(e) => {
+                                    const current = [...landingPageConfig.workflow.steps];
+                                    current[idx].description = e.target.value;
+                                    updateCmsField('workflow', 'steps', current);
+                                  }}
+                                  className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1 text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. Interactive Preview / Showcase Section */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'showcase' ? null : 'showcase')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">5</span>
+                    Interactive Showcase (Scrolling Text Highlight)
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'showcase' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'showcase' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Statement Highlight Paragraphs (One per line)</label>
+                      <textarea
+                        rows={4}
+                        value={landingPageConfig.showcase?.statementLines?.join('\n') || ''}
+                        onChange={(e) => {
+                          const lines = e.target.value.split('\n');
+                          updateCmsField('showcase', 'statementLines', lines);
+                        }}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 leading-relaxed font-sans"
+                        placeholder="Type one sentence per line to dynamically highlight on user scroll..."
+                      />
+                      <span className="text-[10px] text-slate-400 mt-1 block">Each text row is sequentially mapped to highlight automatically as the visitor scrolls down the page.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 6. Pricing Plans */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'pricing' ? null : 'pricing')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">6</span>
+                    Pricing Plans & Subscription Tiers
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'pricing' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'pricing' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Pricing Section Title</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.pricing?.title || ''}
+                          onChange={(e) => updateCmsField('pricing', 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Pricing Section Subtitle</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.pricing?.subtitle || ''}
+                          onChange={(e) => updateCmsField('pricing', 'subtitle', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Subscription Tiers List */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">Subscription Tiers Editor</label>
+                      </div>
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                        {(landingPageConfig.pricing?.plans || []).map((pln: any, idx: number) => (
+                          <div key={idx} className="p-5 bg-white border border-slate-200 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 relative">
+                            <div className="md:col-span-3">
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Plan Name</label>
+                              <input
+                                type="text"
+                                value={pln.name}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.pricing.plans];
+                                  current[idx].name = e.target.value;
+                                  updateCmsField('pricing', 'plans', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs font-bold mt-1"
+                              />
+                            </div>
+                            <div className="md:col-span-5">
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Plan Brief Description</label>
+                              <input
+                                type="text"
+                                value={pln.description}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.pricing.plans];
+                                  current[idx].description = e.target.value;
+                                  updateCmsField('pricing', 'plans', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs font-normal mt-1"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Monthly ($)</label>
+                              <input
+                                type="number"
+                                value={pln.priceMonthly}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.pricing.plans];
+                                  current[idx].priceMonthly = Number(e.target.value);
+                                  updateCmsField('pricing', 'plans', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs mt-1 text-center"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Yearly ($)</label>
+                              <input
+                                type="number"
+                                value={pln.priceAnnual}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.pricing.plans];
+                                  current[idx].priceAnnual = Number(e.target.value);
+                                  updateCmsField('pricing', 'plans', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs mt-1 text-center"
+                              />
+                            </div>
+                            <div className="md:col-span-12">
+                              <label className="block text-[9px] font-black uppercase text-slate-400 mb-1">Features (One per line)</label>
+                              <textarea
+                                value={pln.features?.join('\n')}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.pricing.plans];
+                                  current[idx].features = e.target.value.split('\n');
+                                  updateCmsField('pricing', 'plans', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs font-mono"
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 7. FAQs Section */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'faqs' ? null : 'faqs')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">7</span>
+                    Frequently Asked Questions (FAQs)
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'faqs' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'faqs' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">FAQ Section Title</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.faq?.title || ''}
+                          onChange={(e) => updateCmsField('faq', 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">FAQ Section Subtitle</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.faq?.subtitle || ''}
+                          onChange={(e) => updateCmsField('faq', 'subtitle', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    {/* FAQ item List */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">FAQ List Entries</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = landingPageConfig.faq?.items || [];
+                            updateCmsField('faq', 'items', [...current, { question: 'New Question?', answer: 'Draft Answer text...' }]);
+                          }}
+                          className="text-[#2516FF] hover:text-[#1d11cc] text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add FAQ Item
+                        </button>
+                      </div>
+                      <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+                        {(landingPageConfig.faq?.items || []).map((faItem: any, idx: number) => (
+                          <div key={idx} className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = landingPageConfig.faq.items.filter((_: any, i: number) => i !== idx);
+                                updateCmsField('faq', 'items', current);
+                              }}
+                              className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div>
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Question Title</label>
+                              <input
+                                type="text"
+                                value={faItem.question}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.faq.items];
+                                  current[idx].question = e.target.value;
+                                  updateCmsField('faq', 'items', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs font-bold mt-1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-black uppercase text-slate-400">Answer Body</label>
+                              <textarea
+                                value={faItem.answer}
+                                onChange={(e) => {
+                                  const current = [...landingPageConfig.faq.items];
+                                  current[idx].answer = e.target.value;
+                                  updateCmsField('faq', 'items', current);
+                                }}
+                                className="w-full bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs font-normal mt-1 leading-relaxed"
+                                rows={2}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 8. Call to Action (CTA) Banner */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'cta' ? null : 'cta')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">8</span>
+                    Call to Action (CTA) Banner
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'cta' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'cta' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CTA Banner Heading</label>
+                      <input
+                        type="text"
+                        value={landingPageConfig.cta?.title || ''}
+                        onChange={(e) => updateCmsField('cta', 'title', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CTA Banner Subheading</label>
+                      <input
+                        type="text"
+                        value={landingPageConfig.cta?.subtitle || ''}
+                        onChange={(e) => updateCmsField('cta', 'subtitle', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-normal leading-relaxed"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CTA Button Label</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.cta?.buttonText || ''}
+                          onChange={(e) => updateCmsField('cta', 'buttonText', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CTA Button URL</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.cta?.buttonLink || ''}
+                          onChange={(e) => updateCmsField('cta', 'buttonLink', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Background Style Color Theme</label>
+                        <select
+                          value={landingPageConfig.cta?.bgTheme || 'blue'}
+                          onChange={(e) => updateCmsField('cta', 'bgTheme', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
+                        >
+                          <option value="blue">Brand Royal Blue (#2516FF)</option>
+                          <option value="slate">Cool Slate Gray</option>
+                          <option value="indigo">Luxury Indigo Purple</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 9. Footer & Legal Links */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCmsSection(openCmsSection === 'footer' ? null : 'footer')}
+                  className="w-full flex items-center justify-between p-5 text-left font-black text-slate-800 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold">9</span>
+                    Footer & Company legal links
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openCmsSection === 'footer' ? 'rotate-180' : ''}`} />
+                </button>
+                {openCmsSection === 'footer' && (
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30 space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Company Description Text</label>
+                      <textarea
+                        rows={2}
+                        value={landingPageConfig.footer?.descriptionText || ''}
+                        onChange={(e) => updateCmsField('footer', 'descriptionText', e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 leading-relaxed"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Copyright Notice Text</label>
+                        <input
+                          type="text"
+                          value={landingPageConfig.footer?.copyrightText || ''}
+                          onChange={(e) => updateCmsField('footer', 'copyrightText', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Support Email Address</label>
+                        <input
+                          type="email"
+                          value={landingPageConfig.footer?.supportEmail || ''}
+                          onChange={(e) => updateCmsField('footer', 'supportEmail', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-bold text-[#2516FF]"
+                          placeholder="saad.designs4@gmail.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         )}
+
+        {/* FULLSCREEN PREVIEW DEVICE SIMULATOR OVERLAY MODAL */}
+        <AnimatePresence>
+          {isPreviewOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col"
+            >
+              {/* Simulator Top Controls bar */}
+              <div className="bg-slate-950 text-white p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-300">Live Draft Simulator (Pre-Publishing)</span>
+                </div>
+                
+                {/* Device Size Selectors */}
+                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice('desktop')}
+                    className={`p-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${previewDevice === 'desktop' ? 'bg-[#2516FF] text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <Laptop className="w-3.5 h-3.5" /> Desktop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice('mobile')}
+                    className={`p-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${previewDevice === 'mobile' ? 'bg-[#2516FF] text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" /> Mobile
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="p-2 bg-slate-900 hover:bg-slate-800 rounded-full border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Viewport Simulation Area */}
+              <div className="flex-1 bg-slate-900 flex items-center justify-center p-4 md:p-8 overflow-hidden">
+                <div 
+                  className={`transition-all duration-300 bg-white shadow-2xl overflow-y-auto relative h-full flex flex-col ${
+                    previewDevice === 'mobile' 
+                      ? 'max-w-[380px] w-full rounded-3xl border-[10px] border-slate-850 h-[680px]' 
+                      : 'w-full rounded-xl h-full'
+                  }`}
+                >
+                  
+                  {/* SIMULATED SITE HEADER */}
+                  <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 shadow-xs">
+                    <span className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                      <Logo iconSize={landingPageConfig.header?.iconSize || 24} />
+                      <span>{landingPageConfig.header?.logoText || 'Briefora'}</span>
+                    </span>
+                    <nav className="hidden md:flex items-center gap-6 text-[11px] font-bold text-slate-500 uppercase">
+                      {(landingPageConfig.header?.navLinks || []).map((lnk: any, i: number) => (
+                        <span key={i} className="hover:text-slate-900 cursor-pointer">{lnk.label}</span>
+                      ))}
+                    </nav>
+                    <span className="bg-[#2516FF] text-white text-[10px] font-black px-4 py-2 rounded-full cursor-pointer hover:opacity-90">
+                      {landingPageConfig.header?.primaryCtaText || 'Get Started'}
+                    </span>
+                  </header>
+
+                  <div className="flex-1 space-y-24 pb-20">
+                    
+                    {/* SIMULATED SITE HERO */}
+                    <section className="pt-16 pb-12 px-6 text-center space-y-6">
+                      <span className="inline-block px-3 py-1 border border-slate-200 rounded-full text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                        {landingPageConfig.hero?.badge}
+                      </span>
+                      <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight max-w-2xl mx-auto">
+                        {landingPageConfig.hero?.title}{' '}
+                        <span className="text-[#2516FF]">{landingPageConfig.hero?.highlightTitle}</span>
+                      </h1>
+                      <p className="text-xs md:text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+                        {landingPageConfig.hero?.subtitle}
+                      </p>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="px-6 py-2.5 bg-[#2516FF] text-white text-xs font-bold rounded-full">{landingPageConfig.hero?.primaryCta}</span>
+                        <span className="px-6 py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{landingPageConfig.hero?.secondaryCta}</span>
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE VALUE STATEMENT / PREVIEW TEXT */}
+                    <section className="bg-slate-50 border-y border-slate-100 py-16 px-6">
+                      <div className="max-w-xl mx-auto space-y-4">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-[#2516FF] block">Interactive Showcase Preview</span>
+                        {(landingPageConfig.showcase?.statementLines || []).map((line: string, i: number) => (
+                          <p key={i} className={`text-sm md:text-base font-medium leading-relaxed ${i === 0 ? 'text-slate-950 font-bold' : 'text-slate-400'}`}>
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE FEATURES */}
+                    <section className="px-6 space-y-12">
+                      <div className="text-center space-y-2">
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">{landingPageConfig.features?.eyebrow}</span>
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">{landingPageConfig.features?.title}</h2>
+                        <p className="text-xs text-slate-500 max-w-lg mx-auto">{landingPageConfig.features?.description}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                        {(landingPageConfig.features?.cards || []).map((crd: any, i: number) => (
+                          <div key={i} className="bg-white border border-slate-200/80 p-5 rounded-2xl space-y-3">
+                            <span className="w-10 h-10 rounded-xl bg-[#2516FF]/5 text-[#2516FF] flex items-center justify-center font-bold text-xs">
+                              {i + 1}
+                            </span>
+                            <h3 className="font-bold text-slate-900 text-sm">{crd.title}</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">{crd.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE WORKFLOW */}
+                    <section className="px-6 space-y-12">
+                      <div className="text-center space-y-2">
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">{landingPageConfig.workflow?.title}</h2>
+                        <p className="text-xs text-slate-500 max-w-lg mx-auto">{landingPageConfig.workflow?.subtitle}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                        {(landingPageConfig.workflow?.steps || []).map((stp: any, i: number) => (
+                          <div key={i} className="bg-white border border-slate-200/80 p-5 rounded-2xl relative">
+                            <span className="bg-[#2516FF] text-white text-[9px] px-2.5 py-1 rounded-full font-bold absolute top-4 right-4">
+                              {stp.stepLabel}
+                            </span>
+                            <h3 className="font-bold text-slate-900 text-sm mt-4">{stp.title}</h3>
+                            <p className="text-xs text-slate-500 mt-2 leading-relaxed">{stp.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE PRICING */}
+                    <section className="px-6 space-y-8">
+                      <div className="text-center space-y-2">
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">{landingPageConfig.pricing?.title}</h2>
+                        <p className="text-xs text-slate-500 max-w-lg mx-auto">{landingPageConfig.pricing?.subtitle}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                        {(landingPageConfig.pricing?.plans || []).map((pln: any, i: number) => (
+                          <div key={i} className={`bg-white border p-6 rounded-2xl space-y-4 flex flex-col justify-between ${pln.name.toLowerCase() === 'pro' ? 'border-[#2516FF]/60 ring-2 ring-[#2516FF]/10' : 'border-slate-250'}`}>
+                            <div className="space-y-3">
+                              <h3 className="font-black text-slate-900 text-base">{pln.name}</h3>
+                              <p className="text-xs text-slate-400 leading-relaxed">{pln.description}</p>
+                              <div className="text-2xl font-black text-slate-900 pt-1">${pln.priceMonthly}<span className="text-[10px] text-slate-400 font-normal"> / mo</span></div>
+                              <ul className="space-y-2 pt-2 border-t border-slate-100">
+                                {(pln.features || []).slice(0, 3).map((f: string, j: number) => (
+                                  <li key={j} className="text-xs text-slate-500 flex items-center gap-2">
+                                    <span className="text-[#2516FF]">✓</span> {f}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <span className="w-full bg-[#2516FF] text-white text-xs font-bold py-2 px-4 rounded-xl text-center block mt-4">{pln.ctaText || 'Get Started'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE FAQS */}
+                    <section className="px-6 max-w-2xl mx-auto space-y-8">
+                      <div className="text-center space-y-2">
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">{landingPageConfig.faq?.title}</h2>
+                        <p className="text-xs text-slate-500 max-w-lg mx-auto">{landingPageConfig.faq?.subtitle}</p>
+                      </div>
+                      <div className="space-y-3">
+                        {(landingPageConfig.faq?.items || []).slice(0, 3).map((faq: any, i: number) => (
+                          <div key={i} className="bg-slate-50 border border-slate-200/80 p-4 rounded-xl space-y-2">
+                            <h4 className="font-bold text-slate-900 text-xs">Q: {faq.question}</h4>
+                            <p className="text-xs text-slate-500 leading-relaxed">A: {faq.answer}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* SIMULATED SITE CTA */}
+                    <section className={`mx-6 p-8 rounded-3xl text-center space-y-4 ${
+                      landingPageConfig.cta?.bgTheme === 'indigo' ? 'bg-indigo-950 text-white' : 
+                      landingPageConfig.cta?.bgTheme === 'slate' ? 'bg-slate-900 text-white' : 'bg-[#2516FF] text-white'
+                    }`}>
+                      <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">{landingPageConfig.cta?.title || 'Ready to lock in strategy?'}</h2>
+                      <p className="text-xs text-slate-300 max-w-lg mx-auto">{landingPageConfig.cta?.subtitle || 'Join hundreds of designers securing clients with Briefora.'}</p>
+                      <span className="inline-block bg-white text-slate-950 text-xs font-black px-6 py-2.5 rounded-full cursor-pointer hover:opacity-90">{landingPageConfig.cta?.buttonText || 'Start for free'}</span>
+                    </section>
+
+                  </div>
+
+                  {/* SIMULATED SITE FOOTER */}
+                  <footer className="bg-slate-50 border-t border-slate-100 p-8 text-xs text-slate-500 space-y-4">
+                    <p className="leading-relaxed">{landingPageConfig.footer?.descriptionText}</p>
+                    <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                      <p>{landingPageConfig.footer?.copyrightText}</p>
+                      <span className="font-bold text-[#2516FF]">{landingPageConfig.footer?.supportEmail || 'saad.designs4@gmail.com'}</span>
+                    </div>
+                  </footer>
+
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* 6. LEGAL POLICY EDITORS */}
         {activeTab === 'legal' && (
@@ -1733,6 +2605,659 @@ export default function AdminPortal() {
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* 10. CHECKOUT & PAYMENT SETTINGS CMS PANEL */}
+        {activeTab === 'checkout' && (
+          <div className="space-y-8">
+            
+            {/* Top Action Card */}
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-primary" /> Checkout & Payment CMS
+                </h3>
+                <p className="text-slate-500 text-xs mt-1">
+                  Manage E-Wallet accounts, PKR plan pricing conversions, instruction steps, WhatsApp confirmation template, and legal agreement checks.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveCheckoutConfig}
+                disabled={isCheckoutSaving}
+                className="px-6 py-3 rounded-xl bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#2516FF]/10 shrink-0 disabled:opacity-50"
+              >
+                {isCheckoutSaving ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{isCheckoutSaving ? 'Saving & Syncing...' : 'Save Checkout Settings'}</span>
+              </button>
+            </div>
+
+            {/* 1. Page Typography & Labels CMS */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> 1. Page Typography & Headlines CMS
+                </h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Customize the main titles, headers, badges, and button labels displayed on the Checkout page.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Header Badge Text
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.headerBadgeText || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), headerBadgeText: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Change Plan Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.changePlanText || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), changePlanText: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Main Page Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.pageTitle || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), pageTitle: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Page Description / Subtitle
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={checkoutConfig.pageText?.pageDescription || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), pageDescription: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Converted PKR Amount Label
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.pkrConvertedLabel || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), pkrConvertedLabel: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Included Features Section Title
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.includedFeaturesHeading || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), includedFeaturesHeading: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Select Payment Method Step Label
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.selectMethodHeading || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), selectMethodHeading: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    E-Wallet Box Heading
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.eWalletBoxHeading || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), eWalletBoxHeading: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Instructions Section Label
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.instructionsHeading || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), instructionsHeading: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    WhatsApp Button Label
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.whatsAppButtonText || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), whatsAppButtonText: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    WhatsApp Security / Trust Note
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.pageText?.whatsAppNoteText || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      pageText: { ...(prev.pageText || defaultCheckoutConfig.pageText!), whatsAppNoteText: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 2. E-Wallet Account Details */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-primary" /> 2. E-Wallet Account Details
+                </h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Set the receiving title and mobile number shown on the payment terminal.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Account Title
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.accountDetails?.accountTitle || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      accountDetails: { ...prev.accountDetails, accountTitle: e.target.value }
+                    }))}
+                    placeholder="e.g. USMAN AHMAD"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Mobile Account Number
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.accountDetails?.mobileAccountNumber || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      accountDetails: { ...prev.accountDetails, mobileAccountNumber: e.target.value }
+                    }))}
+                    placeholder="e.g. 03299482074"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Gateway Toggles & Custom Labels */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">JazzCash Gateway Tab</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checkoutConfig.accountDetails?.jazzCashLogoToggle ?? true}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, jazzCashLogoToggle: e.target.checked }
+                        }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tab Label</label>
+                    <input
+                      type="text"
+                      value={checkoutConfig.accountDetails?.jazzCashLabel || ''}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        accountDetails: { ...prev.accountDetails, jazzCashLabel: e.target.value }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">EasyPaisa Gateway Tab</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checkoutConfig.accountDetails?.easyPaisaLogoToggle ?? true}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, easyPaisaLogoToggle: e.target.checked }
+                        }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tab Label</label>
+                    <input
+                      type="text"
+                      value={checkoutConfig.accountDetails?.easyPaisaLabel || ''}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        accountDetails: { ...prev.accountDetails, easyPaisaLabel: e.target.value }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Plan Pricing Mapping (PKR Conversions) */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" /> 3. Plan Pricing Mapping (PKR Conversions)
+                </h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Set exact PKR prices for each subscription plan tier and billing cycle.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Starter Plan */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                  <span className="text-xs font-black uppercase text-slate-900 block">Starter Plan</span>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Monthly PKR Price</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.starter?.monthly ?? 0}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          starter: { ...prev.pkrPrices?.starter, monthly: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Annual PKR Price / Mo</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.starter?.annual ?? 0}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          starter: { ...prev.pkrPrices?.starter, annual: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Pro Plan */}
+                <div className="p-4 rounded-xl bg-primary-light/30 border border-primary/20 space-y-4">
+                  <span className="text-xs font-black uppercase text-primary block">Pro Plan</span>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Monthly PKR Price</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.pro?.monthly ?? 2500}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          pro: { ...prev.pkrPrices?.pro, monthly: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Annual PKR Price / Mo</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.pro?.annual ?? 2000}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          pro: { ...prev.pkrPrices?.pro, annual: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Studio Plan */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                  <span className="text-xs font-black uppercase text-slate-900 block">Studio Plan</span>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Monthly PKR Price</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.studio?.monthly ?? 7500}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          studio: { ...prev.pkrPrices?.studio, monthly: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Annual PKR Price / Mo</label>
+                    <input
+                      type="number"
+                      value={checkoutConfig.pkrPrices?.studio?.annual ?? 6000}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        pkrPrices: {
+                          ...prev.pkrPrices,
+                          studio: { ...prev.pkrPrices?.studio, annual: Number(e.target.value) }
+                        }
+                      }))}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Instruction Steps Editor */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-primary" /> 4. Step-by-Step Payment Instructions
+                  </h4>
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    Customize the step sequence rendered on the checkout page.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCheckoutConfig((prev) => ({
+                    ...prev,
+                    instructionSteps: [...(prev.instructionSteps || []), 'New instruction step...']
+                  }))}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Step
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(checkoutConfig.instructionSteps || []).map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-primary-light text-primary text-xs font-black flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={step}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCheckoutConfig((prev) => {
+                          const updated = [...(prev.instructionSteps || [])];
+                          updated[idx] = val;
+                          return { ...prev, instructionSteps: updated };
+                        });
+                      }}
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCheckoutConfig((prev) => ({
+                          ...prev,
+                          instructionSteps: (prev.instructionSteps || []).filter((_, i) => i !== idx)
+                        }));
+                      }}
+                      className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Remove Step"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. WhatsApp Confirmation Settings */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" /> 5. WhatsApp Confirmation Settings
+                </h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Configure destination WhatsApp number and message template with dynamic tags.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    WhatsApp Destination Number (with country code)
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.whatsAppConfig?.number || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      whatsAppConfig: { ...prev.whatsAppConfig, number: e.target.value }
+                    }))}
+                    placeholder="e.g. 923299482074"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600">
+                      Message Template
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Tags: <code className="text-primary font-mono">{`{PLAN_NAME}`}</code>, <code className="text-primary font-mono">{`{AMOUNT}`}</code>, <code className="text-primary font-mono">{`{ACCOUNT_NAME}`}</code>, <code className="text-primary font-mono">{`{ACCOUNT_NUMBER}`}</code>, <code className="text-primary font-mono">{`{BILLING_CYCLE}`}</code>
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={checkoutConfig.whatsAppConfig?.messageTemplate || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      whatsAppConfig: { ...prev.whatsAppConfig, messageTemplate: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 6. Legal & Policy Agreement Controls */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> 6. Legal & Agreement Policy Controls
+                </h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Require users to accept terms before enabling the WhatsApp submission button.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">Enforce Terms Checkbox</span>
+                    <span className="text-[11px] text-slate-500">Require checkbox check before payment confirmation.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checkoutConfig.legalPolicy?.enforceTermsCheckbox ?? true}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        legalPolicy: { ...prev.legalPolicy, enforceTermsCheckbox: e.target.checked }
+                      }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Checkbox Label Text
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutConfig.legalPolicy?.checkboxLabelText || ''}
+                    onChange={(e) => setCheckoutConfig((prev) => ({
+                      ...prev,
+                      legalPolicy: { ...prev.legalPolicy, checkboxLabelText: e.target.value }
+                    }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-medium"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Terms URL</label>
+                    <input
+                      type="text"
+                      value={checkoutConfig.legalPolicy?.termsUrl || '/termsofservice'}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        legalPolicy: { ...prev.legalPolicy, termsUrl: e.target.value }
+                      }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Privacy URL</label>
+                    <input
+                      type="text"
+                      value={checkoutConfig.legalPolicy?.privacyUrl || '/privacypolicy'}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        legalPolicy: { ...prev.legalPolicy, privacyUrl: e.target.value }
+                      }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Refund / Usage URL</label>
+                    <input
+                      type="text"
+                      value={checkoutConfig.legalPolicy?.refundUrl || '/usagepolicy'}
+                      onChange={(e) => setCheckoutConfig((prev) => ({
+                        ...prev,
+                        legalPolicy: { ...prev.legalPolicy, refundUrl: e.target.value }
+                      }))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Save Bar */}
+            <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between text-white shadow-xl">
+              <span className="text-xs font-semibold text-slate-300">
+                Ready to publish updated checkout settings live to all visitors?
+              </span>
+              <button
+                type="button"
+                onClick={handleSaveCheckoutConfig}
+                disabled={isCheckoutSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-[#2516FF]/20"
+              >
+                {isCheckoutSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                <span>{isCheckoutSaving ? 'Saving...' : 'Publish Checkout Settings'}</span>
+              </button>
+            </div>
+
           </div>
         )}
 
