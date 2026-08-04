@@ -638,19 +638,29 @@ export const defaultCheckoutConfig: CheckoutConfig = {
     easyPaisaLogoToggle: true,
   },
   pkrPrices: {
-    starter: { monthly: 0, annual: 0 },
-    pro: { monthly: 2500, annual: 2000 },
-    studio: { monthly: 7500, annual: 6000 },
+    starter: { monthly: 2500, annual: 17000 },
+    pro: { monthly: 5000, annual: 35000 },
+    studio: { monthly: 12000, annual: 85000 },
   },
   instructionSteps: [
     "Open your JazzCash or EasyPaisa App or dial *786#.",
-    "Transfer the exact plan amount in PKR to the Mobile Account Number listed above.",
-    "Save the Transaction ID (TRX ID) or take a screenshot of your payment confirmation.",
-    "Click the 'Confirm on WhatsApp' button below to attach your screenshot and activate your plan."
+    "Select Bank / Mobile Transfer and enter number listed above.",
+    "Transfer the exact plan amount in PKR to the Mobile Account Number.",
+    "Take a screenshot of your payment receipt and click 'Confirm Payment on WhatsApp' below."
   ],
   whatsAppConfig: {
     number: "03150106504",
-    messageTemplate: "Hi Briefora Team! I have sent PKR {AMOUNT} for the {PLAN_NAME} plan ({BILLING_CYCLE}) to {ACCOUNT_NAME} ({ACCOUNT_NUMBER}). Attached is my transaction receipt screenshot for account activation."
+    messageTemplate: `Hi Breifora Team! 👋 I have transferred the payment for subscription activation.
+
+📌 Order Details:
+- Plan: {PLAN_NAME}
+- Billing: {BILLING_CYCLE}
+- Amount Paid: Rs. {AMOUNT}
+- Account Name: {ACCOUNT_NAME}
+- Account Number: {ACCOUNT_NUMBER}
+- Registered Email: {USER_EMAIL}
+
+📎 Attached below is my transaction screenshot for verification.`
   },
   legalPolicy: {
     enforceTermsCheckbox: true,

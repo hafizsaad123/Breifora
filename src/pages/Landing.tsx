@@ -28,6 +28,20 @@ export default function Landing() {
   // FAQ open index state (0 open by default)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
+  // Smooth scroll handler for section links
+  const scrollToNavSection = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    if (url && url.startsWith('#')) {
+      e.preventDefault();
+      setIsMenuOpen(false);
+      const targetId = url.substring(1);
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.pushState(null, '', url);
+      }
+    }
+  };
+
   // Hash-scrolling logic on mount or navigation
   useEffect(() => {
     if (location.hash) {
@@ -107,7 +121,8 @@ export default function Landing() {
                 href={lnk.url}
                 target={lnk.openNewTab ? '_blank' : undefined}
                 rel={lnk.openNewTab ? 'noopener noreferrer' : undefined}
-                className="hover:text-slate-900 transition-colors"
+                onClick={(e) => scrollToNavSection(e, lnk.url)}
+                className="hover:text-slate-900 transition-colors cursor-pointer select-none font-medium"
               >
                 {lnk.label}
               </a>
@@ -118,13 +133,13 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to={cmsConfig.header?.secondaryCtaLink || '/login'}
-              className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all"
+              className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer"
             >
               {cmsConfig.header?.secondaryCtaText || 'Sign in'}
             </Link>
             <Link
               to={cmsConfig.header?.primaryCtaLink || '/signup'}
-              className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer"
+              className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer cursor-pointer"
             >
               {cmsConfig.header?.primaryCtaText || 'Start for free'}
             </Link>
@@ -154,41 +169,22 @@ export default function Landing() {
             className="fixed top-24 left-4 right-4 z-40 md:hidden bg-white/95 backdrop-blur-lg border border-slate-200/90 rounded-2xl p-6 shadow-xl flex flex-col gap-6"
           >
             <nav className="flex flex-col gap-4 text-sm font-medium text-slate-700">
-              <a 
-                href="#features" 
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
-              >
-                Benefits
-              </a>
-              <a 
-                href="#how-it-works" 
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
-              >
-                How It Works
-              </a>
-              <a 
-                href="#why-briefora" 
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
-              >
-                Why Briefora
-              </a>
-              <a 
-                href="#pricing" 
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors"
-              >
-                Pricing
-              </a>
-              <a 
-                href="#faq" 
-                onClick={() => setIsMenuOpen(false)}
-                className="hover:text-slate-900 py-2 transition-colors"
-              >
-                FAQs
-              </a>
+              {(cmsConfig.header?.navLinks || [
+                { label: 'Benefits', url: '#features' },
+                { label: 'How It Works', url: '#how-it-works' },
+                { label: 'Why Briefora', url: '#why-briefora' },
+                { label: 'Pricing', url: '#pricing' },
+                { label: 'FAQs', url: '#faq' },
+              ]).map((lnk: any, idx: number) => (
+                <a 
+                  key={idx}
+                  href={lnk.url} 
+                  onClick={(e) => scrollToNavSection(e, lnk.url)}
+                  className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors cursor-pointer flex items-center justify-between"
+                >
+                  <span>{lnk.label}</span>
+                </a>
+              ))}
             </nav>
 
             <div className="flex flex-col gap-3 pt-2">

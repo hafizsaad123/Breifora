@@ -13,13 +13,14 @@ interface AnimatedPriceTextProps {
 }
 
 export function AnimatedPriceText({ value, isFree }: AnimatedPriceTextProps) {
+  const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
   return (
     <div className="flex items-baseline font-geist">
-      <span className="text-2xl md:text-3xl font-bold text-slate-900 self-start mt-1 font-geist">$</span>
-      <span className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight font-geist px-1 py-1">
-        {value}
+      <span className="text-base sm:text-lg font-bold text-slate-500 self-start mt-1 font-geist mr-1">PKR</span>
+      <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-geist py-1">
+        {formattedValue}
       </span>
-      <span className="text-sm font-medium text-slate-400 ml-1 font-geist">
+      <span className="text-xs font-medium text-slate-400 ml-1.5 font-geist">
         {isFree ? 'Forever' : '/mo'}
       </span>
     </div>
@@ -35,7 +36,14 @@ export default function Pricing() {
   const handleCTA = (planId: string) => {
     let cleanPlan = (planId || 'pro').replace('plan-', '').toLowerCase();
     if (cleanPlan === 'free') cleanPlan = 'starter';
-    navigate(`/checkout?plan=${cleanPlan}&billing=${isAnnual ? 'yearly' : 'monthly'}`);
+    const targetUrl = `/checkout?plan=${cleanPlan}&billing=${isAnnual ? 'yearly' : 'monthly'}`;
+    
+    const localUser = localStorage.getItem('briefora_current_user') || localStorage.getItem('briefora_user');
+    if (!localUser) {
+      navigate(`/signup?redirect=${encodeURIComponent(targetUrl)}`);
+    } else {
+      navigate(targetUrl);
+    }
   };
 
   return (

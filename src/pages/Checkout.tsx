@@ -1,17 +1,30 @@
-import React, { useState, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   Check, Copy, ArrowLeft, ShieldCheck, 
-  ExternalLink, MessageCircle, Wallet, Lock, Sparkles
+  ExternalLink, MessageCircle, Wallet, Lock, Sparkles, User as UserIcon, LogOut
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { defaultCheckoutConfig } from '../lib/adminSync';
+import { useAuth } from '../context/AuthContext';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
   const { settings } = useAppSettings();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Smart Pre-Checkout Auth Guard
+  useEffect(() => {
+    const localUser = localStorage.getItem('briefora_current_user') || localStorage.getItem('briefora_user');
+    if (!user && !localUser) {
+      const currentFullUrl = location.pathname + location.search;
+      navigate(`/signup?redirect=${encodeURIComponent(currentFullUrl)}`, { replace: true });
+    }
+  }, [user, location, navigate]);
 
   const checkoutConfig = useMemo(() => {
     const raw = settings.checkout_config || defaultCheckoutConfig;
@@ -118,7 +131,7 @@ export default function Checkout() {
   // PKR Price Calculation
   const pkrPriceNum = useMemo(() => {
     const prices = checkoutConfig.pkrPrices || defaultCheckoutConfig.pkrPrices;
-    const planPrices = prices[planKey] || (planKey === 'starter' ? { monthly: 0, annual: 0 } : { monthly: 2500, annual: 2000 });
+    const planPrices = prices[planKey] || (planKey === 'starter' ? { monthly: 2500, annual: 17000 } : { monthly: 5000, annual: 35000 });
     return isYearly ? planPrices.annual : planPrices.monthly;
   }, [checkoutConfig.pkrPrices, planKey, isYearly]);
 
@@ -142,6 +155,9 @@ export default function Checkout() {
   // Terms Agreement Checkbox State
   const [termsAgreed, setTermsAgreed] = useState(false);
 
+  // Active user email
+  const userEmail = user?.email || (localStorage.getItem('briefora_current_user') ? JSON.parse(localStorage.getItem('briefora_current_user')!).email : 'guest@briefora.com');
+
   // WhatsApp Link Generation
   const whatsappUrl = useMemo(() => {
     let rawNum = checkoutConfig.whatsAppConfig?.number || '03150106504';
@@ -149,7 +165,17 @@ export default function Checkout() {
     if (digits.startsWith('03')) {
       digits = '92' + digits.slice(1);
     }
-    let template = checkoutConfig.whatsAppConfig?.messageTemplate || defaultCheckoutConfig.whatsAppConfig.messageTemplate;
+    let template = checkoutConfig.whatsAppConfig?.messageTemplate || `Hi Breifora Team! 👋 I have transferred the payment for subscription activation.
+
+📌 Order Details:
+- Plan: {PLAN_NAME}
+- Billing: {BILLING_CYCLE}
+- Amount Paid: Rs. {AMOUNT}
+- Account Name: {ACCOUNT_NAME}
+- Account Number: {ACCOUNT_NUMBER}
+- Registered Email: {USER_EMAIL}
+
+📎 Attached below is my transaction screenshot for verification.`;
 
     const cycleText = isYearly ? 'Annual Billing' : 'Monthly Billing';
 
@@ -158,21 +184,28 @@ export default function Checkout() {
       .replace('{AMOUNT}', pkrPriceFormatted)
       .replace('{ACCOUNT_NAME}', checkoutConfig.accountDetails.accountTitle)
       .replace('{ACCOUNT_NUMBER}', checkoutConfig.accountDetails.mobileAccountNumber)
-      .replace('{BILLING_CYCLE}', cycleText);
+      .replace('{BILLING_CYCLE}', cycleText)
+      .replace('{USER_EMAIL}', userEmail);
 
     return `https://wa.me/${digits}?text=${encodeURIComponent(template)}`;
-  }, [checkoutConfig, planDetails.name, pkrPriceFormatted, isYearly]);
+  }, [checkoutConfig, planDetails.name, pkrPriceFormatted, isYearly, userEmail]);
 
   const isButtonDisabled = checkoutConfig.legalPolicy.enforceTermsCheckbox && !termsAgreed;
 
-  return (
-    <div className="min-h-screen bg-[#FBFBFD] text-slate-900 font-sans antialiased relative selection:bg-[#2516FF] selection:text-white">
-      {/* Background Ambient Accents */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-[#2516FF]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-[120px] pointer-events-none" />
+  const handleSwitchAccount = () => {
+    logout();
+    const currentFullUrl = location.pathname + location.search;
+    navigate(`/signup?redirect=${encodeURIComponent(currentFullUrl)}`);
+  };
 
-      {/* Light Theme Header */}
-      <header className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl sticky top-0 z-40">
+  return (
+    <div className="min-h-screen bg-[#0B0F17] text-white font-sans antialiased relative selection:bg-[#2516FF] selection:text-white">
+      {/* Background Ambient Accents */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-[#2516FF]/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+      {/* Dark Theme Glass Header */}
+      <header className="border-b border-slate-800/80 bg-[#0F172A]/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group cursor-pointer">
             <Logo iconSize={32} />
@@ -180,7 +213,7 @@ export default function Checkout() {
 
           <Link
             to="/#pricing"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-4 py-2 rounded-xl transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 px-4 py-2 rounded-xl transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> {pageText.changePlanText || 'Change Plan'}
           </Link>
@@ -191,102 +224,124 @@ export default function Checkout() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
         {/* Page Hero Title */}
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2516FF]/10 border border-[#2516FF]/20 text-[#2516FF] text-[11px] font-bold tracking-wider uppercase mb-3">
-            <ShieldCheck className="w-3.5 h-3.5" /> {pageText.headerBadgeText}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2516FF]/20 border border-[#2516FF]/40 text-blue-400 text-[11px] font-bold tracking-wider uppercase mb-3">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> {pageText.headerBadgeText}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             {pageText.pageTitle}
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base mt-1.5 max-w-2xl leading-relaxed">
+          <p className="text-slate-400 text-sm sm:text-base mt-1.5 max-w-2xl leading-relaxed">
             {pageText.pageDescription}
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
-          {/* LEFT COLUMN: PLAN SUMMARY (Light Theme Card) */}
+          {/* LEFT COLUMN: PLAN SUMMARY (Dark High-Contrast Card) */}
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-5 bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden"
+            className="lg:col-span-5 bg-[#121A2D] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden"
           >
             {/* Corner Decorative Accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#2516FF]/10 to-transparent rounded-bl-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#2516FF]/20 to-transparent rounded-bl-full pointer-events-none" />
 
             <div className="flex items-center justify-between gap-3 mb-4">
-              <span className="px-3 py-1 rounded-lg bg-[#2516FF] text-white text-xs font-bold uppercase tracking-wider shadow-sm">
+              <span className="px-3.5 py-1 rounded-lg bg-[#2516FF] text-white text-xs font-bold uppercase tracking-wider shadow-md">
                 {planDetails.name} Plan
               </span>
-              <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+              <span className="text-xs font-semibold text-slate-300 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">
                 {isYearly ? 'Annual Billing (Save 20%)' : 'Monthly Billing'}
               </span>
             </div>
 
-            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">
               {planDetails.description}
             </p>
 
             {/* Price Banner */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-6">
-              <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block mb-1">
+            <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 mb-6">
+              <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider block mb-1">
                 {pageText.pkrConvertedLabel}
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono tracking-tight">
+                <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
                   {pkrPriceFormatted}
                 </span>
-                <span className="text-slate-500 text-xs font-semibold">
+                <span className="text-slate-400 text-xs font-semibold">
                   {isYearly ? '/ year' : '/ month'}
                 </span>
               </div>
               {isYearly && pkrPriceNum > 0 && (
-                <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Discounted annual pricing rate applied
+                <p className="text-[11px] text-emerald-400 font-semibold mt-1.5 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-emerald-400" /> Discounted annual pricing rate applied
                 </p>
               )}
             </div>
 
             {/* Features List */}
             <div className="space-y-3 mb-8">
-              <span className="text-xs font-bold uppercase text-slate-500 tracking-wider block">
+              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider block">
                 {pageText.includedFeaturesHeading}
               </span>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-200">
                 {(planDetails.features || []).map((feat: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2.5">
-                    <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="w-2.5 h-2.5" />
                     </span>
-                    <span className="font-medium">{feat}</span>
+                    <span className="font-medium text-slate-200">{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             {/* Change Plan Button */}
-            <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500">Need a different tier?</span>
+            <div className="pt-6 border-t border-slate-800 flex items-center justify-between text-xs">
+              <span className="text-slate-400">Need a different tier?</span>
               <Link 
                 to="/#pricing" 
-                className="text-[#2516FF] hover:underline font-bold transition-colors flex items-center gap-1"
+                className="text-blue-400 hover:text-blue-300 font-bold transition-colors flex items-center gap-1"
               >
                 Choose another plan →
               </Link>
             </div>
           </motion.div>
 
-          {/* RIGHT COLUMN: PAYMENT & VERIFICATION TERMINAL (Light Theme Card) */}
+          {/* RIGHT COLUMN: PAYMENT TERMINAL (Dark High-Contrast Card) */}
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
             className="lg:col-span-7"
           >
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="bg-[#121A2D] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
               
+              {/* Account / Logged in User Bar */}
+              <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                    <UserIcon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Checkout Identity</p>
+                    <p className="text-xs font-bold text-white truncate">{userEmail}</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSwitchAccount}
+                  className="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border border-slate-700/60"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Switch Account</span>
+                </button>
+              </div>
+
               {/* Payment Method Selector Tabs */}
               <div>
-                <span className="text-xs font-bold uppercase text-slate-500 tracking-wider block mb-3">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider block mb-3">
                   {pageText.selectMethodHeading}
                 </span>
                 
@@ -297,12 +352,12 @@ export default function Checkout() {
                       onClick={() => setSelectedGateway('jazzcash')}
                       className={`p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 cursor-pointer text-xs sm:text-sm font-bold ${
                         selectedGateway === 'jazzcash'
-                          ? 'bg-[#2516FF]/10 border-[#2516FF] text-[#2516FF] shadow-sm'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                          ? 'bg-[#2516FF]/20 border-[#2516FF] text-white shadow-lg shadow-[#2516FF]/10 ring-2 ring-[#2516FF]/40'
+                          : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${
-                        selectedGateway === 'jazzcash' ? 'bg-[#2516FF] text-white' : 'bg-slate-200 text-slate-700'
+                        selectedGateway === 'jazzcash' ? 'bg-[#2516FF] text-white' : 'bg-slate-800 text-slate-400'
                       }`}>
                         JC
                       </div>
@@ -316,12 +371,12 @@ export default function Checkout() {
                       onClick={() => setSelectedGateway('easypaisa')}
                       className={`p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 cursor-pointer text-xs sm:text-sm font-bold ${
                         selectedGateway === 'easypaisa'
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                          ? 'bg-emerald-500/20 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/40'
+                          : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${
-                        selectedGateway === 'easypaisa' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'
+                        selectedGateway === 'easypaisa' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'
                       }`}>
                         EP
                       </div>
@@ -332,43 +387,43 @@ export default function Checkout() {
               </div>
 
               {/* Account Details Box */}
-              <div className="p-5 sm:p-6 bg-slate-50/90 border border-slate-200 rounded-2xl space-y-4">
+              <div className="p-5 sm:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase text-slate-600 tracking-wider flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-[#2516FF]" /> {pageText.eWalletBoxHeading}
+                  <span className="text-[11px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-blue-400" /> {pageText.eWalletBoxHeading}
                   </span>
-                  <span className="text-[10px] font-bold uppercase bg-white text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-bold uppercase bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-700">
                     {selectedGateway === 'jazzcash' ? (checkoutConfig.accountDetails.jazzCashLabel || 'JazzCash') : (checkoutConfig.accountDetails.easyPaisaLabel || 'EasyPaisa')}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">
                       Account Title
                     </span>
-                    <span className="text-sm font-black text-slate-900 tracking-wide block">
+                    <span className="text-sm font-black text-white tracking-wide block">
                       {checkoutConfig.accountDetails.accountTitle}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">
                       Mobile Account Number
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-[#2516FF] font-mono tracking-wider">
+                      <span className="text-base font-black text-blue-400 font-mono tracking-wider">
                         {checkoutConfig.accountDetails.mobileAccountNumber}
                       </span>
                       <button
                         type="button"
                         onClick={handleCopyNumber}
-                        className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 transition-colors cursor-pointer relative"
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer relative"
                         title="Copy Number"
                       >
                         <Copy className="w-3.5 h-3.5" />
                         {copied && (
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
                             Copied!
                           </span>
                         )}
@@ -377,21 +432,21 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                  <span className="text-xs text-slate-600 font-semibold">Required Transfer Amount:</span>
-                  <span className="text-base font-black text-slate-900 font-mono">{pkrPriceFormatted}</span>
+                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-semibold">Required Transfer Amount:</span>
+                  <span className="text-base font-black text-white font-mono">{pkrPriceFormatted}</span>
                 </div>
               </div>
 
               {/* Step-by-Step Payment Instructions */}
               <div>
-                <span className="text-xs font-bold uppercase text-slate-500 tracking-wider block mb-3">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider block mb-3">
                   {pageText.instructionsHeading}
                 </span>
                 <ol className="space-y-3">
                   {(checkoutConfig.instructionSteps || defaultCheckoutConfig.instructionSteps).map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-700">
-                      <span className="w-5 h-5 rounded-full bg-[#2516FF]/10 text-[#2516FF] text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5 border border-[#2516FF]/20">
+                    <li key={idx} className="flex items-start gap-3 p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-300">
+                      <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5 border border-blue-500/30">
                         {idx + 1}
                       </span>
                       <span className="leading-relaxed font-medium">{step}</span>
@@ -401,19 +456,19 @@ export default function Checkout() {
               </div>
 
               {/* Legal & Terms Checkbox */}
-              <div className="pt-2 border-t border-slate-100 space-y-3">
+              <div className="pt-2 border-t border-slate-800 space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={termsAgreed}
                     onChange={(e) => setTermsAgreed(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded border-slate-300 text-[#2516FF] focus:ring-[#2516FF] cursor-pointer"
+                    className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-900 text-[#2516FF] focus:ring-[#2516FF] cursor-pointer"
                   />
-                  <span className="text-xs text-slate-600 group-hover:text-slate-900 leading-relaxed">
+                  <span className="text-xs text-slate-400 group-hover:text-slate-200 leading-relaxed">
                     {checkoutConfig.legalPolicy.checkboxLabelText || defaultCheckoutConfig.legalPolicy.checkboxLabelText}{' '}
-                    <Link to={checkoutConfig.legalPolicy.termsUrl || '/termsofservice'} target="_blank" className="text-[#2516FF] hover:underline font-semibold">Terms of Service</Link>,{' '}
-                    <Link to={checkoutConfig.legalPolicy.privacyUrl || '/privacypolicy'} target="_blank" className="text-[#2516FF] hover:underline font-semibold">Privacy Policy</Link>, and{' '}
-                    <Link to={checkoutConfig.legalPolicy.refundUrl || '/usagepolicy'} target="_blank" className="text-[#2516FF] hover:underline font-semibold">Refund Policy</Link>.
+                    <Link to={checkoutConfig.legalPolicy.termsUrl || '/termsofservice'} target="_blank" className="text-blue-400 hover:underline font-semibold">Terms of Service</Link>,{' '}
+                    <Link to={checkoutConfig.legalPolicy.privacyUrl || '/privacypolicy'} target="_blank" className="text-blue-400 hover:underline font-semibold">Privacy Policy</Link>, and{' '}
+                    <Link to={checkoutConfig.legalPolicy.refundUrl || '/usagepolicy'} target="_blank" className="text-blue-400 hover:underline font-semibold">Refund Policy</Link>.
                   </span>
                 </label>
               </div>
@@ -430,10 +485,10 @@ export default function Checkout() {
                       alert('Please agree to the Terms & Policies before proceeding to WhatsApp confirmation.');
                     }
                   }}
-                  className={`w-full py-4 px-6 rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all cursor-pointer shadow-md ${
+                  className={`w-full py-4 px-6 rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg ${
                     isButtonDisabled
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-70 border border-slate-300'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.99] shadow-emerald-600/10'
+                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60 border border-slate-700'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-[0.99] shadow-emerald-600/20'
                   }`}
                 >
                   <MessageCircle className="w-5 h-5 shrink-0" />
@@ -441,8 +496,8 @@ export default function Checkout() {
                   <ExternalLink className="w-4 h-4 shrink-0 opacity-80" />
                 </a>
 
-                <p className="text-[11px] text-slate-500 text-center mt-3 flex items-center justify-center gap-1.5 font-medium">
-                  <Lock className="w-3.5 h-3.5 text-emerald-600" /> {pageText.whatsAppNoteText}
+                <p className="text-[11px] text-slate-400 text-center mt-3 flex items-center justify-center gap-1.5 font-medium">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" /> {pageText.whatsAppNoteText}
                 </p>
               </div>
 

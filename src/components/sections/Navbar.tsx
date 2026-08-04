@@ -39,12 +39,11 @@ export default function Navbar() {
   };
 
   const menuItems = [
-    { label: 'Benefits', id: 'benefits' },
+    { label: 'Benefits', id: 'features' },
     { label: 'How It Works', id: 'how-it-works' },
     { label: 'Why Briefora', id: 'why-briefora' },
     { label: 'Pricing', id: 'pricing' },
-    { label: 'Testimonials', id: 'testimonials' },
-    { label: 'FAQs', id: 'faqs' },
+    { label: 'FAQs', id: 'faq' },
   ];
 
   return (

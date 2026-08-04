@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Home, 
@@ -32,9 +33,14 @@ import {
   ChevronRight,
   SlidersHorizontal,
   X,
-  Menu
+  Menu,
+  Zap,
+  Sparkles,
+  ShieldAlert,
+  Plus
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
+import { useAuth } from '../context/AuthContext';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -155,6 +161,42 @@ const INITIAL_MESSAGES = [
 ];
 
 export default function Dashboard({ onLogout }: DashboardProps) {
+  const { user, decrementCredit } = useAuth();
+  const navigate = useNavigate();
+
+  // Paywall & Brief Generator State
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [modalBilling, setModalBilling] = useState<'monthly' | 'yearly'>('monthly');
+  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+  const [generatedBriefs, setGeneratedBriefs] = useState<any[]>([]);
+  const [briefClientName, setBriefClientName] = useState('');
+  const [briefIndustry, setBriefIndustry] = useState('');
+
+  const freeCreditsRemaining = user?.free_credits !== undefined ? user.free_credits : 1;
+
+  const handleGenerateBrief = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const success = decrementCredit();
+    if (!success) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setIsGeneratingBrief(true);
+    setTimeout(() => {
+      setIsGeneratingBrief(false);
+      const newBrief = {
+        id: Date.now(),
+        client: briefClientName || 'New Client Brief',
+        industry: briefIndustry || 'General Strategy',
+        createdAt: 'Just now',
+        status: 'Active'
+      };
+      setGeneratedBriefs(prev => [newBrief, ...prev]);
+      setBriefClientName('');
+      setBriefIndustry('');
+    }, 1200);
+  };
+
   // Read current user session from LocalStorage
   const [currentUser, setCurrentUser] = useState(() => {
     const stored = localStorage.getItem('briefora_current_user');
@@ -616,7 +658,29 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
 
           {/* Quick top menu options */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => setShowUpgradeModal(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                freeCreditsRemaining > 0
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              }`}
+            >
+              {freeCreditsRemaining > 0 ? (
+                <>
+                  <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                  <span>1 Free Brief Credit</span>
+                </>
+              ) : (
+                <>
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                  <span>0 Credits - Upgrade Plan</span>
+                </>
+              )}
+            </button>
+
             <button className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer relative">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#5956E9] rounded-full" />
@@ -639,10 +703,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
             {/* Date period dropdown tags */}
             <div className="flex items-center gap-2">
-              {/* Date options drop capsules */}
               <div className="relative">
                 <button
-                  onClick={() => setIsProfileOpen(false)} // simple reset
+                  onClick={() => setIsProfileOpen(false)}
                   className="bg-white px-3.5 py-2 rounded-xl text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-slate-350 flex items-center gap-1.5 transition-all outline-none cursor-pointer"
                 >
                   <span>{activeDateRange}</span>
@@ -658,6 +721,69 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </div>
             </div>
+          </div>
+
+          {/* ⚡ STRATEGY BRIEF GENERATOR WIDGET */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[11px] font-bold uppercase tracking-wider border border-blue-500/30">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Briefora Strategy Engine</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  Generate Instant Client Strategy Brief
+                </h2>
+                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                  Transform raw client intake into an interactive, high-converting strategy deck in 60 seconds.
+                </p>
+              </div>
+
+              <form onSubmit={handleGenerateBrief} className="flex flex-col sm:flex-row gap-3 min-w-[300px] lg:min-w-[420px]">
+                <input
+                  type="text"
+                  placeholder="Client / Project Name"
+                  value={briefClientName}
+                  onChange={(e) => setBriefClientName(e.target.value)}
+                  className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 flex-1"
+                />
+                <button
+                  type="submit"
+                  disabled={isGeneratingBrief}
+                  className="px-5 py-2.5 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                >
+                  {isGeneratingBrief ? (
+                    <span>Compiling Brief...</span>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 fill-white" />
+                      <span>Generate Brief ({freeCreditsRemaining} Free)</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Render newly generated brief card if any */}
+            {generatedBriefs.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent Generated Briefs</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {generatedBriefs.map((b) => (
+                    <div key={b.id} className="p-3.5 bg-slate-800/60 border border-slate-700/80 rounded-xl flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-bold text-white">{b.client}</p>
+                        <p className="text-[10px] text-slate-400">{b.industry} • {b.createdAt}</p>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold rounded-md">
+                        Ready
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 🧱 THREE-COLUMN METRIC CARD GRID LAYER (Perfect breakdown match) */}
@@ -1135,6 +1261,222 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         </section>
       </main>
+
+      {/* 🚀 UPGRADE PLAN PAYWALL MODAL */}
+      <AnimatePresence>
+        {showUpgradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowUpgradeModal(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative z-10 w-full max-w-4xl bg-[#0B0F17] border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl overflow-hidden my-auto"
+            >
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Modal Header */}
+              <div className="text-center max-w-2xl mx-auto mb-8 space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2516FF]/20 text-blue-400 text-xs font-bold uppercase tracking-wider border border-[#2516FF]/30">
+                  <Zap className="w-3.5 h-3.5 fill-blue-400" />
+                  <span>1-Credit Trial Completed</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  Unlock Unlimited Client Strategy Briefs
+                </h2>
+                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                  You have used your 1 free strategy brief generation. Choose a plan to continue building client magic links, generating strategic blueprints, and closing high-value retainers.
+                </p>
+
+                {/* Billing Toggle Switcher */}
+                <div className="flex items-center justify-center gap-3 pt-4 select-none">
+                  <button
+                    type="button"
+                    onClick={() => setModalBilling('monthly')}
+                    className={`text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                      modalBilling === 'monthly' ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Billed Monthly
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalBilling(modalBilling === 'monthly' ? 'yearly' : 'monthly')}
+                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 relative ${
+                      modalBilling === 'yearly' ? 'bg-[#2516FF]' : 'bg-slate-800'
+                    }`}
+                  >
+                    <motion.div
+                      layout
+                      className="w-5 h-5 rounded-full bg-white shadow-sm"
+                      animate={{ x: modalBilling === 'yearly' ? 20 : 0 }}
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalBilling('yearly')}
+                    className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      modalBilling === 'yearly' ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Billed Annually <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Save 20%</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3 Pricing Options Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+                {/* STARTER CARD */}
+                <div className="bg-[#121A2D] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-white">Starter</h3>
+                      <span className="text-[10px] font-bold uppercase bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-700">Sandbox</span>
+                    </div>
+                    <p className="text-xs text-slate-400">For independent creators establishing their workflow.</p>
+                    <div className="py-2">
+                      <p className="text-2xl font-black text-white font-mono">
+                        {modalBilling === 'yearly' ? 'PKR 17,000' : 'PKR 2,500'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                    </div>
+                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>1 Active magic client link</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>Tactile core typographic tracks</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>Direct raw data exports</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUpgradeModal(false);
+                      navigate(`/checkout?plan=starter&billing=${modalBilling}`);
+                    }}
+                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer"
+                  >
+                    Upgrade to Starter
+                  </button>
+                </div>
+
+                {/* PRO CARD (HIGHLIGHTED) */}
+                <div className="bg-[#121A2D] border-2 border-[#2516FF] rounded-2xl p-6 flex flex-col justify-between space-y-6 relative shadow-xl shadow-[#2516FF]/10">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2516FF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
+                    Most Popular
+                  </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-white">Pro</h3>
+                      <span className="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded-full border border-blue-500/30">Agencies</span>
+                    </div>
+                    <p className="text-xs text-slate-400">For active freelance designers and brand strategists.</p>
+                    <div className="py-2">
+                      <p className="text-2xl font-black text-white font-mono">
+                        {modalBilling === 'yearly' ? 'PKR 35,000' : 'PKR 5,000'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                    </div>
+                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Unlimited active brief links</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Strategic blueprint compiler</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Premium PDF exports & branding</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUpgradeModal(false);
+                      navigate(`/checkout?plan=pro&billing=${modalBilling}`);
+                    }}
+                    className="w-full py-3 px-4 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-lg cursor-pointer"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+
+                {/* STUDIO CARD */}
+                <div className="bg-[#121A2D] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-white">Studio</h3>
+                      <span className="text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-500/30">Enterprise</span>
+                    </div>
+                    <p className="text-xs text-slate-400">For high-end digital agencies and creative groups.</p>
+                    <div className="py-2">
+                      <p className="text-2xl font-black text-white font-mono">
+                        {modalBilling === 'yearly' ? 'PKR 85,000' : 'PKR 12,000'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                    </div>
+                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <span>100% white-label client portals</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <span>Custom studio domain hosting</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <span>Up to 5 team editor seats</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUpgradeModal(false);
+                      navigate(`/checkout?plan=studio&billing=${modalBilling}`);
+                    }}
+                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer"
+                  >
+                    Upgrade to Studio
+                  </button>
+                </div>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
