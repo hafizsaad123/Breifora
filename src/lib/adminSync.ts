@@ -594,6 +594,8 @@ export interface CheckoutConfig {
     jazzCashLogoToggle: boolean;
     easyPaisaLabel: string;
     easyPaisaLogoToggle: boolean;
+    easyPaisaAccountTitle?: string;
+    easyPaisaAccountNumber?: string;
   };
   pkrPrices: {
     starter: { monthly: number; annual: number };
@@ -630,12 +632,14 @@ export const defaultCheckoutConfig: CheckoutConfig = {
     whatsAppNoteText: "WhatsApp opens directly with pre-filled details to send your transaction screenshot.",
   },
   accountDetails: {
-    accountTitle: "USMAN AHMAD",
-    mobileAccountNumber: "03299482074",
+    accountTitle: "Saif ur Rehman",
+    mobileAccountNumber: "03112075467",
     jazzCashLabel: "JazzCash",
     jazzCashLogoToggle: true,
     easyPaisaLabel: "EasyPaisa",
     easyPaisaLogoToggle: true,
+    easyPaisaAccountTitle: "SAMIA BANO",
+    easyPaisaAccountNumber: "03322933095",
   },
   pkrPrices: {
     starter: { monthly: 2500, annual: 17000 },
@@ -650,21 +654,22 @@ export const defaultCheckoutConfig: CheckoutConfig = {
   ],
   whatsAppConfig: {
     number: "03150106504",
-    messageTemplate: `Hi Breifora Team! 👋 I have transferred the payment for subscription activation.
+    messageTemplate: `Hi Briefora Team! 👋 I have transferred the payment for subscription activation.
 
 📌 Order Details:
 - Plan: {PLAN_NAME}
 - Billing: {BILLING_CYCLE}
 - Amount Paid: Rs. {AMOUNT}
-- Account Name: {ACCOUNT_NAME}
-- Account Number: {ACCOUNT_NUMBER}
+- Payment Wallet: {PAYMENT_METHOD}
+- Receiver Account Name: {ACCOUNT_NAME}
+- Receiver Account Number: {ACCOUNT_NUMBER}
 - Registered Email: {USER_EMAIL}
 
 📎 Attached below is my transaction screenshot for verification.`
   },
   legalPolicy: {
     enforceTermsCheckbox: true,
-    checkboxLabelText: "I agree to the Terms of Service, Privacy Policy, and Refund Policy",
+    checkboxLabelText: "I agree to the Terms of Service, Privacy Policy, and Usage Policy",
     termsUrl: "/termsofservice",
     privacyUrl: "/privacypolicy",
     refundUrl: "/usagepolicy"

@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { getAdminLandingPageConfig } from '../lib/adminSync';
+import { useAuth } from '../context/AuthContext';
 import dashboardImg from '../assets/images/dashboard.png';
 import bentocard01 from '../assets/images/bentocard01.png';
 import bentocard02 from '../assets/images/bentocard02.png';
@@ -18,6 +19,20 @@ export default function Landing() {
   const { settings } = useAppSettings();
   const cmsConfig = settings.landing_page_config || getAdminLandingPageConfig();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const getPlanLink = (planName: string) => {
+    const planSlug = (planName || '').toLowerCase();
+    const checkoutPath = `/checkout?plan=${planSlug}&billing=${isYearly ? 'yearly' : 'monthly'}`;
+    if (user) {
+      if (user.onboarded) {
+        return checkoutPath;
+      } else {
+        return `/onboarding?redirect=${encodeURIComponent(checkoutPath)}`;
+      }
+    }
+    return `/signup?redirect=${encodeURIComponent(checkoutPath)}`;
+  };
 
   // Mobile menu open state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,7 +51,13 @@ export default function Landing() {
       const targetId = url.substring(1);
       const element = document.getElementById(targetId);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const headerOffset = 100; // Offset to account for the sticky header
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
         window.history.pushState(null, '', url);
       }
     }
@@ -50,7 +71,13 @@ export default function Landing() {
       const timer = setTimeout(() => {
         const element = document.getElementById(targetId);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const headerOffset = 100;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
         }
       }, 150);
       return () => clearTimeout(timer);
@@ -118,10 +145,10 @@ export default function Landing() {
             ]).map((lnk: any, idx: number) => (
               <a
                 key={idx}
-                href={lnk.url}
-                target={lnk.openNewTab ? '_blank' : undefined}
-                rel={lnk.openNewTab ? 'noopener noreferrer' : undefined}
-                onClick={(e) => scrollToNavSection(e, lnk.url)}
+                href={lnk.url || lnk.anchorUrl}
+                target={lnk.openNewTab || lnk.openInNewTab ? '_blank' : undefined}
+                rel={lnk.openNewTab || lnk.openInNewTab ? 'noopener noreferrer' : undefined}
+                onClick={(e) => scrollToNavSection(e, lnk.url || lnk.anchorUrl)}
                 className="hover:text-slate-900 transition-colors cursor-pointer select-none font-medium"
               >
                 {lnk.label}
@@ -131,18 +158,29 @@ export default function Landing() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to={cmsConfig.header?.secondaryCtaLink || '/login'}
-              className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer"
-            >
-              {cmsConfig.header?.secondaryCtaText || 'Sign in'}
-            </Link>
-            <Link
-              to={cmsConfig.header?.primaryCtaLink || '/signup'}
-              className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer cursor-pointer"
-            >
-              {cmsConfig.header?.primaryCtaText || 'Start for free'}
-            </Link>
+            {!user ? (
+              <>
+                <Link
+                  to={cmsConfig.header?.secondaryCtaLink || '/login'}
+                  className="bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer"
+                >
+                  {cmsConfig.header?.secondaryCtaText || 'Sign in'}
+                </Link>
+                <Link
+                  to={cmsConfig.header?.primaryCtaLink || '/signup'}
+                  className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all animate-shimmer cursor-pointer"
+                >
+                  {cmsConfig.header?.primaryCtaText || 'Start for free'}
+                </Link>
+              </>
+            ) : (
+              <Link
+                to={user.onboarded ? '/dashboard' : '/onboarding'}
+                className="bg-[#2516FF] hover:bg-[#1d11cc] text-white text-xs md:text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer"
+              >
+                Go to Dashboard
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -178,8 +216,8 @@ export default function Landing() {
               ]).map((lnk: any, idx: number) => (
                 <a 
                   key={idx}
-                  href={lnk.url} 
-                  onClick={(e) => scrollToNavSection(e, lnk.url)}
+                  href={lnk.url || lnk.anchorUrl} 
+                  onClick={(e) => scrollToNavSection(e, lnk.url || lnk.anchorUrl)}
                   className="hover:text-slate-900 py-2 border-b border-slate-100 transition-colors cursor-pointer flex items-center justify-between"
                 >
                   <span>{lnk.label}</span>
@@ -188,20 +226,32 @@ export default function Landing() {
             </nav>
 
             <div className="flex flex-col gap-3 pt-2">
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-medium py-3 rounded-full text-center transition-all"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setIsMenuOpen(false)}
-                className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white text-sm font-medium py-3 rounded-full text-center transition-all shadow-sm"
-              >
-                Start for free
-              </Link>
+              {!user ? (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-medium py-3 rounded-full text-center transition-all"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white text-sm font-medium py-3 rounded-full text-center transition-all shadow-sm"
+                  >
+                    Start for free
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to={user.onboarded ? '/dashboard' : '/onboarding'}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white text-sm font-medium py-3 rounded-full text-center transition-all shadow-sm"
+                >
+                  Go to Dashboard
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
@@ -236,17 +286,19 @@ export default function Landing() {
           {/* Pill CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Link
-              to="/signup"
+              to={user ? (user.onboarded ? '/dashboard' : '/onboarding') : '/signup'}
               className="w-full sm:w-auto bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
             >
-              {cmsConfig.hero?.primaryCta || settings.hero_copy?.primaryCta || 'Start for free'}
+              {user ? 'Go to Dashboard' : (cmsConfig.hero?.primaryCta || settings.hero_copy?.primaryCta || 'Start for free')}
             </Link>
-            <a
-              href="#features"
-              className="w-full sm:w-auto bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
-            >
-              {cmsConfig.hero?.secondaryCta || settings.hero_copy?.secondaryCta || 'See How It Works'}
-            </a>
+            {!user && (
+              <a
+                href="#features"
+                className="w-full sm:w-auto bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium px-8 py-3.5 rounded-full text-base transition-all text-center block sm:inline-block"
+              >
+                {cmsConfig.hero?.secondaryCta || settings.hero_copy?.secondaryCta || 'See How It Works'}
+              </a>
+            )}
           </div>
 
           {/* Dashboard Preview */}
@@ -585,7 +637,7 @@ export default function Landing() {
                       </div>
 
                       <Link
-                        to="/signup"
+                        to={getPlanLink(plan.name)}
                         className="w-full bg-[#2516FF] hover:bg-[#1d11cc] text-white font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
                       >
                         {plan.ctaText || 'Start with Pro'}
@@ -632,7 +684,7 @@ export default function Landing() {
                   </div>
 
                   <Link
-                    to="/signup"
+                    to={getPlanLink(plan.name)}
                     className="w-full bg-slate-100/90 hover:bg-slate-200/90 text-slate-900 font-medium py-3.5 px-6 rounded-full text-sm transition-all text-center block"
                   >
                     {plan.ctaText || 'Start for free'}
@@ -736,7 +788,7 @@ export default function Landing() {
             {/* Links Column: Pages */}
             <div className="md:col-span-3">
               <ul className="space-y-3.5 text-sm font-normal text-slate-500">
-                {(cmsConfig.footer?.navLinks || [
+                {(cmsConfig.footer?.navLinks || cmsConfig.footer?.column1Links || [
                   { label: 'Benefits', url: '#features' },
                   { label: 'How it Works', url: '#how-it-works' },
                   { label: 'Why Briefora', url: '#why-briefora' },
@@ -744,7 +796,11 @@ export default function Landing() {
                   { label: 'FAQs', url: '#faq' },
                 ]).map((lnk: any, idx: number) => (
                   <li key={idx}>
-                    <a href={lnk.url} className="hover:text-slate-900 transition-colors">
+                    <a 
+                      href={lnk.url || lnk.anchorUrl} 
+                      onClick={(e) => scrollToNavSection(e, lnk.url || lnk.anchorUrl)}
+                      className="hover:text-slate-900 transition-colors cursor-pointer"
+                    >
                       {lnk.label}
                     </a>
                   </li>

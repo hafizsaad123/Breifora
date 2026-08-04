@@ -2828,37 +2828,79 @@ export default function AdminPortal() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
-                    Account Title
-                  </label>
-                  <input
-                    type="text"
-                    value={checkoutConfig.accountDetails?.accountTitle || ''}
-                    onChange={(e) => setCheckoutConfig((prev) => ({
-                      ...prev,
-                      accountDetails: { ...prev.accountDetails, accountTitle: e.target.value }
-                    }))}
-                    placeholder="e.g. USMAN AHMAD"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
+                  <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">JazzCash (or Default) Details</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                        JazzCash Account Title
+                      </label>
+                      <input
+                        type="text"
+                        value={checkoutConfig.accountDetails?.accountTitle || ''}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, accountTitle: e.target.value }
+                        }))}
+                        placeholder="e.g. Saif ur Rehman"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                        JazzCash Mobile Number
+                      </label>
+                      <input
+                        type="text"
+                        value={checkoutConfig.accountDetails?.mobileAccountNumber || ''}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, mobileAccountNumber: e.target.value }
+                        }))}
+                        placeholder="e.g. 03112075467"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
-                    Mobile Account Number
-                  </label>
-                  <input
-                    type="text"
-                    value={checkoutConfig.accountDetails?.mobileAccountNumber || ''}
-                    onChange={(e) => setCheckoutConfig((prev) => ({
-                      ...prev,
-                      accountDetails: { ...prev.accountDetails, mobileAccountNumber: e.target.value }
-                    }))}
-                    placeholder="e.g. 03299482074"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
+                <div className="pt-4 border-t border-slate-100">
+                  <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">EasyPaisa Details</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                        EasyPaisa Account Title
+                      </label>
+                      <input
+                        type="text"
+                        value={checkoutConfig.accountDetails?.easyPaisaAccountTitle || ''}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, easyPaisaAccountTitle: e.target.value }
+                        }))}
+                        placeholder="e.g. SAMIA BANO"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                        EasyPaisa Mobile Number
+                      </label>
+                      <input
+                        type="text"
+                        value={checkoutConfig.accountDetails?.easyPaisaAccountNumber || ''}
+                        onChange={(e) => setCheckoutConfig((prev) => ({
+                          ...prev,
+                          accountDetails: { ...prev.accountDetails, easyPaisaAccountNumber: e.target.value }
+                        }))}
+                        placeholder="e.g. 03322933095"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

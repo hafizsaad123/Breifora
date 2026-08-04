@@ -1,43 +1,32 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
-  Home, 
-  Inbox, 
-  Link as LinkIcon, 
+  LayoutGrid, 
+  Folder, 
+  Wand2, 
+  LayoutTemplate, 
+  BarChart2, 
+  Plug, 
   Users, 
-  Calendar, 
-  LineChart, 
-  CheckSquare, 
-  TrendingUp, 
-  FileText, 
-  Blocks, 
-  HelpCircle, 
   Settings, 
-  Bell, 
+  CreditCard, 
+  Sparkles, 
   MoreHorizontal, 
-  LogOut, 
   ChevronDown, 
-  ArrowUp, 
-  ArrowDown, 
-  CalendarCheck, 
-  Mail, 
-  MailOpen, 
-  CornerUpLeft, 
-  EyeOff,
-  Building2, 
-  Tag, 
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
+  Bell, 
+  Plus, 
+  FileText, 
+  TrendingUp, 
+  Pencil, 
+  UserPlus, 
+  Check, 
   X,
-  Menu,
   Zap,
-  Sparkles,
-  ShieldAlert,
-  Plus
+  LogOut,
+  Smartphone,
+  Menu
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
@@ -46,1261 +35,832 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-// Exact mock historical data from the image_77f6f1.jpg reference
-const INITIAL_MESSAGES = [
-  {
-    id: 1,
-    name: "Maya Tran",
-    email: "maya@zenli.io",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
-    message: "Thanks for reaching out—this looks interesting.",
-    date: "Jul 9, 2025",
-    status: "Booked",
-    organization: "Zenli",
-    tags: "Top priority"
-  },
-  {
-    id: 2,
-    name: "Lucas Moreno",
-    email: "lucas@syncro.io",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
-    message: "Let's set something up for early next week.",
-    date: "Jul 11, 2025",
-    status: "Replied",
-    organization: "Syncro",
-    tags: "Meeting booked"
-  },
-  {
-    id: 3,
-    name: "Aiden Clark",
-    email: "aiden@briva.ai",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
-    message: "Appreciate the follow-up. We're not ready yet.",
-    date: "Jul 10, 2025",
-    status: "Replied",
-    organization: "Briva",
-    tags: "Needs review"
-  },
-  {
-    id: 4,
-    name: "Noor El-Sayed",
-    email: "noor@lumora.com",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=100&q=80",
-    message: "Can you share more about the pricing model?",
-    date: "Jul 8, 2025",
-    status: "Ignored",
-    organization: "Lumora",
-    tags: "Needs review"
-  },
-  {
-    id: 5,
-    name: "Sofia Dimitrova",
-    email: "sofia@flowly.io",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
-    message: "Forwarded this to our CTO. He'll get back to you.",
-    date: "Jul 7, 2025",
-    status: "Opened",
-    organization: "Flowly",
-    tags: "Top priority"
-  },
-  {
-    id: 6,
-    name: "Zane Mitchell",
-    email: "zane@orbix.co",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    message: "I'm interested. Can you show a quick demo?",
-    date: "Jul 6, 2025",
-    status: "Ignored",
-    organization: "Orbix",
-    tags: "Needs review"
-  },
-  {
-    id: 7,
-    name: "Chloe Alvarez",
-    email: "chloe@finza.co",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80",
-    message: "We've just onboarded a different tool, sorry.",
-    date: "Jul 5, 2025",
-    status: "Opened",
-    organization: "Finza",
-    tags: "Top lead"
-  },
-  {
-    id: 8,
-    name: "Farah Bensaid",
-    email: "farah@clearo.io",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80",
-    message: "Your product seems like a great fit for our team.",
-    date: "Jul 3, 2025",
-    status: "Booked",
-    organization: "Clearo",
-    tags: "Top priority"
-  },
-  {
-    id: 9,
-    name: "Matteo Ricci",
-    email: "matteo@stryx.dev",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&q=80",
-    message: "This sounds promising—mind sending a deck?",
-    date: "Jul 2, 2025",
-    status: "Replied",
-    organization: "Stryx",
-    tags: "Needs review"
-  },
-  {
-    id: 10,
-    name: "Lina Novak",
-    email: "lina@quanty.com",
-    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=100&q=80",
-    message: "Just saw this—do you have time for a quick chat?",
-    date: "Jun 30, 2025",
-    status: "Ignored",
-    organization: "Quanty",
-    tags: "Needs review"
-  }
-];
-
 export default function Dashboard({ onLogout }: DashboardProps) {
   const { user, decrementCredit } = useAuth();
   const navigate = useNavigate();
 
-  // Paywall & Brief Generator State
+  // Active Tab state
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState('This Month');
+
+  // Modals & Generator State
+  const [showNewBriefModal, setShowNewBriefModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [modalBilling, setModalBilling] = useState<'monthly' | 'yearly'>('monthly');
-  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
-  const [generatedBriefs, setGeneratedBriefs] = useState<any[]>([]);
-  const [briefClientName, setBriefClientName] = useState('');
-  const [briefIndustry, setBriefIndustry] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [clientNameInput, setClientNameInput] = useState('');
+  const [industryInput, setIndustryInput] = useState('');
+  const [newlyCreatedBriefs, setNewlyCreatedBriefs] = useState<any[]>([]);
+
+  // User session reading
+  const currentUser = (() => {
+    const stored = localStorage.getItem('briefora_current_user');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) { /* fallback */ }
+    }
+    return {
+      firstName: user?.firstName || 'Saad',
+      lastName: user?.lastName || '',
+      email: user?.email || 'saad@briefora.com',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+      userRole: 'Workspace'
+    };
+  })();
 
   const freeCreditsRemaining = user?.free_credits !== undefined ? user.free_credits : 1;
 
-  const handleGenerateBrief = (e?: React.FormEvent) => {
+  const handleCreateBriefSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const success = decrementCredit();
     if (!success) {
+      setShowNewBriefModal(false);
       setShowUpgradeModal(true);
       return;
     }
-    setIsGeneratingBrief(true);
+
+    setIsGenerating(true);
     setTimeout(() => {
-      setIsGeneratingBrief(false);
-      const newBrief = {
+      setIsGenerating(false);
+      const briefObj = {
         id: Date.now(),
-        client: briefClientName || 'New Client Brief',
-        industry: briefIndustry || 'General Strategy',
+        client: clientNameInput || 'Redesign Strategy Brief',
+        industry: industryInput || 'Digital Experience',
         createdAt: 'Just now',
         status: 'Active'
       };
-      setGeneratedBriefs(prev => [newBrief, ...prev]);
-      setBriefClientName('');
-      setBriefIndustry('');
-    }, 1200);
+      setNewlyCreatedBriefs(prev => [briefObj, ...prev]);
+      setClientNameInput('');
+      setIndustryInput('');
+      setShowNewBriefModal(false);
+    }, 1000);
   };
 
-  // Read current user session from LocalStorage
-  const [currentUser, setCurrentUser] = useState(() => {
-    const stored = localStorage.getItem('briefora_current_user');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Error parsing briefora_current_user:', e);
-      }
-    }
-    return {
-      firstName: "Omar",
-      lastName: "Ktiri",
-      email: "omar@briefora.com",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=100&q=80",
-      userRole: "Briefora Admin",
-      workspaceName: "Briefora HQ"
-    };
-  });
-
-  // Keep state in sync if local storage updates
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const stored = localStorage.getItem('briefora_current_user');
-      if (stored) {
-        try {
-          setCurrentUser(JSON.parse(stored));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Navigation active tab tracking
-  const [activeTab, setActiveTab] = useState('Home');
-  const [sidebarSearch, setSidebarSearch] = useState('');
-  
-  // Sidebar minimized state (Desktop/Tablet collapse)
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  // Sidebar expanded drawer state on Mobile
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  // Table filter options
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [orgFilter, setOrgFilter] = useState('All');
-  const [tagFilter, setTagFilter] = useState('All');
-  
-  // Selection and interactive states
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [activeDateRange, setActiveDateRange] = useState('Last 7 days');
-
-  // Available filters from data
-  const statusOptions = ['All', 'Booked', 'Replied', 'Opened', 'Ignored'];
-  const orgOptions = ['All', 'Zenli', 'Syncro', 'Briva', 'Lumora', 'Flowly', 'Orbix', 'Finza', 'Clearo', 'Stryx', 'Quanty'];
-  const tagOptions = ['All', 'Top priority', 'Meeting booked', 'Needs review', 'Top lead'];
-
-  // Main menu items
-  const mainNavItems = [
-    { name: 'Home', icon: Home },
-    { name: 'Inbox', icon: Inbox, badge: 3 },
-    { name: 'Sequences', icon: LinkIcon },
-    { name: 'Prospects', icon: Users },
-    { name: 'Meetings', icon: Calendar },
-    { name: 'Pipeline', icon: LineChart },
-    { name: 'Tasks', icon: CheckSquare },
-    { name: 'Insights', icon: TrendingUp },
+  const navMenuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+    { id: 'projects', label: 'Projects', icon: Folder },
+    { id: 'ai-briefs', label: 'AI Briefs', icon: Wand2 },
+    { id: 'templates', label: 'Templates', icon: LayoutTemplate },
+    { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+    { id: 'integrations', label: 'Integrations', icon: Plug },
+    { id: 'team', label: 'Team', icon: Users },
+    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'billing', label: 'Billing', icon: CreditCard },
   ];
-
-  // Utility menu items
-  const utilityNavItems = [
-    { name: 'Templates', icon: FileText },
-    { name: 'Integrations', icon: Blocks },
-    { name: 'Support', icon: HelpCircle },
-    { name: 'Settings', icon: Settings },
-  ];
-
-  // Filter messages based on multi-parameter selectors
-  const filteredMessages = useMemo(() => {
-    return INITIAL_MESSAGES.filter(msg => {
-      const matchSearch = 
-        msg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.organization.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchStatus = statusFilter === 'All' || msg.status === statusFilter;
-      const matchOrg = orgFilter === 'All' || msg.organization === orgFilter;
-      const matchTag = tagFilter === 'All' || msg.tags === tagFilter;
-
-      return matchSearch && matchStatus && matchOrg && matchTag;
-    });
-  }, [searchTerm, statusFilter, orgFilter, tagFilter]);
-
-  // Pagination setup (10 messages per page default, let's paginate by 5 for perfect demonstration of Previous/Next)
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
-  
-  const paginatedMessages = useMemo(() => {
-    const startIdx = (currentPage - 1) * itemsPerPage;
-    return filteredMessages.slice(startIdx, startIdx + itemsPerPage);
-  }, [filteredMessages, currentPage]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(paginatedMessages.map(m => m.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectRow = (id: number, checked: boolean) => {
-    if (checked) {
-      setSelectedIds(prev => [...prev, id]);
-    } else {
-      setSelectedIds(prev => prev.filter(rowId => rowId !== id));
-    }
-  };
-
-  const getStatusStyle = (status: string) => {
-    switch(status) {
-      case 'Booked':
-        return {
-          bg: 'bg-blue-50/70',
-          text: 'text-cyan-600',
-          border: 'border-blue-100',
-          iconColor: 'text-cyan-500'
-        };
-      case 'Replied':
-        return {
-          bg: 'bg-emerald-50/60',
-          text: 'text-emerald-600',
-          border: 'border-emerald-100',
-          iconColor: 'text-emerald-500'
-        };
-      case 'Opened':
-        return {
-          bg: 'bg-amber-50/60',
-          text: 'text-amber-500',
-          border: 'border-amber-100',
-          iconColor: 'text-amber-400'
-        };
-      case 'Ignored':
-      default:
-        return {
-          bg: 'bg-slate-50/80',
-          text: 'text-slate-500',
-          border: 'border-slate-100',
-          iconColor: 'text-slate-400'
-        };
-    }
-  };
-
-  const getTagStyle = (tag: string) => {
-    switch (tag) {
-      case 'Top priority':
-        return 'text-cyan-600 bg-cyan-50 border-cyan-100 hover:bg-cyan-100/50';
-      case 'Meeting booked':
-        return 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100/50';
-      case 'Needs review':
-        return 'text-amber-500 bg-amber-50 border-amber-100 hover:bg-amber-100/50';
-      case 'Top lead':
-        return 'text-rose-500 bg-rose-50 border-rose-100 hover:bg-rose-100/50';
-      default:
-        return 'text-slate-500 bg-slate-50 border-slate-100';
-    }
-  };
-
-  // Sidebar list matching Briefora Search filtering
-  const filteredMainNav = useMemo(() => {
-    if (!sidebarSearch) return mainNavItems;
-    return mainNavItems.filter(item => item.name.toLowerCase().includes(sidebarSearch.toLowerCase()));
-  }, [sidebarSearch]);
-
-  const filteredUtilNav = useMemo(() => {
-    if (!sidebarSearch) return utilityNavItems;
-    return utilityNavItems.filter(item => item.name.toLowerCase().includes(sidebarSearch.toLowerCase()));
-  }, [sidebarSearch]);
 
   return (
-    <div className="w-full h-screen flex bg-[#F8F9FC] font-sans overflow-hidden text-slate-800">
-      
-      {/* 🔮 MOBILE DRAWER OVERLAY BACKDROP */}
+    <div className="flex h-screen w-full bg-[#F8FAFC] font-sans overflow-hidden text-slate-800">
+
+      {/* 📱 MOBILE SIDEBAR OVERLAY */}
       <AnimatePresence>
         {isMobileOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"
+            className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-xs"
           />
         )}
       </AnimatePresence>
 
-      {/* 🧱 LEFT SIDEBAR PANEL (Responsive & Smooth Collapsible) */}
-      <aside 
-        className={`bg-white border-r border-slate-200/80 h-full flex flex-col justify-between select-none shrink-0 fixed md:relative top-0 bottom-0 left-0 z-45 transition-all duration-300 ease-in-out
-          ${isCollapsed ? 'md:w-[76px] px-3' : 'md:w-64 px-5'} 
-          ${isMobileOpen ? 'translate-x-0 w-64 px-5 shadow-2xl' : '-translate-x-full md:translate-x-0 w-64'}
-        `}
+      {/* 🧭 LEFT SIDEBAR NAVIGATION */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-150 flex flex-col justify-between p-5 transition-transform duration-300 ease-in-out shrink-0 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
       >
-        <div className="flex flex-col pt-5 flex-1 overflow-y-auto no-scrollbar transition-all duration-300">
-          
-          {/* Logo brand label container */}
-          <div className="flex items-center justify-between mb-4 mt-1">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <Logo iconSize={32} textSize="text-lg font-black" iconOnly={isCollapsed} />
-            </div>
-            
-            {/* Collapse desktop button or mobile close indicator */}
-            <button 
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:block text-slate-450 hover:text-slate-700 p-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg className={`w-4 h-4 transform transition-transform duration-250 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            </button>
-
-            {/* Mobile close button inside sidebar */}
-            <button 
+        <div className="space-y-6">
+          {/* Logo Header */}
+          <div className="flex items-center justify-between px-2 pt-1">
+            <Logo />
+            <button
+              type="button"
               onClick={() => setIsMobileOpen(false)}
-              className="block md:hidden text-slate-400 hover:text-slate-650 p-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-              title="Close sidebar"
+              className="lg:hidden text-slate-400 hover:text-slate-600 p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Pill search sidebar intake */}
-          <div className="relative mb-5 min-h-[40px] flex items-center transition-all duration-350">
-            {isCollapsed ? (
-              <button 
-                onClick={() => setIsCollapsed(false)}
-                className="w-10 h-10 mx-auto flex items-center justify-center bg-[#f4f6fa] text-slate-500 hover:text-[#5956E9] rounded-xl hover:bg-[#5956E9]/5 transition-all cursor-pointer group/search relative"
-                title="Search"
-              >
-                <Search className="w-4.5 h-4.5" />
-                <div className="absolute left-14 pl-2.5 z-50 pointer-events-none opacity-0 group-hover/search:opacity-100 transition-opacity duration-200">
-                  <div className="bg-slate-950/95 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                    Search
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <div className="relative w-full">
-                <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search" 
-                  value={sidebarSearch}
-                  onChange={(e) => setSidebarSearch(e.target.value)}
-                  className="w-full bg-[#f4f6fa] border-none rounded-full py-2.5 pl-10 pr-4 text-xs font-medium text-slate-705 placeholder-slate-450 focus:outline-none focus:ring-1 focus:ring-[#5956E9] transition-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* MAIN NAV STACK Group */}
-          <div className="mb-6">
-            {isCollapsed ? (
-              <div className="h-px bg-slate-100/90 my-3.5 mx-1" />
-            ) : (
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3 mb-2">Main</p>
-            )}
-            <nav className="space-y-0.5">
-              {filteredMainNav.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.name;
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      setActiveTab(item.name);
-                      // Auto-close overlay drawer on mobile selection for perfect responsiveness
-                      if (window.innerWidth < 768) {
-                        setIsMobileOpen(false);
-                      }
-                    }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 group/btn relative cursor-pointer ${
-                      isActive 
-                        ? "bg-[#5956E9]/10 text-[#5956E9]" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"
-                    } ${isCollapsed ? "justify-center" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-[17px] h-[17px] shrink-0 transition-colors duration-200 ${
-                        isActive ? "text-[#5956E9]" : "text-slate-400 group-hover/btn:text-slate-950"
-                      }`} />
-                      {!isCollapsed && <span className="transition-opacity duration-200 truncate">{item.name}</span>}
-                    </div>
-                    {!isCollapsed && item.badge && (
-                      <span className="bg-[#5956E9]/20 text-[#5956E9] text-[9.5px] font-black px-1.5 py-0.5 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                    {isCollapsed && item.badge && (
-                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#5956E9] rounded-full" />
-                    )}
-
-                    {/* Highly Polished Floating Tooltip when Minimized */}
-                    {isCollapsed && (
-                      <div className="absolute left-14 pl-2.5 z-50 pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200">
-                        <div className="bg-slate-950/95 text-white text-[10.5px] font-extrabold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap leading-none flex items-center gap-1.5">
-                          <span>{item.name}</span>
-                          {item.badge && (
-                            <span className="bg-white/20 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
-                              {item.badge}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* UTILITY NAV STACK Group */}
-          <div>
-            {isCollapsed ? (
-              <div className="h-px bg-slate-100/90 my-3.5 mx-1" />
-            ) : (
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-3 mb-2">Utility</p>
-            )}
-            <nav className="space-y-0.5">
-              {filteredUtilNav.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.name;
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      setActiveTab(item.name);
-                      if (window.innerWidth < 768) {
-                        setIsMobileOpen(false);
-                      }
-                    }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 group/btn relative cursor-pointer ${
-                      isActive 
-                        ? "bg-[#5956E9]/10 text-[#5956E9]" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-950"
-                    } ${isCollapsed ? "justify-center" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-[17px] h-[17px] shrink-0 transition-colors duration-200 ${
-                        isActive ? "text-[#5956E9]" : "text-slate-400 group-hover/btn:text-slate-950"
-                      }`} />
-                      {!isCollapsed && <span className="transition-opacity duration-200 truncate">{item.name}</span>}
-                    </div>
-
-                    {/* Highly Polished Floating Tooltip when Minimized */}
-                    {isCollapsed && (
-                      <div className="absolute left-14 pl-2.5 z-50 pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200">
-                        <div className="bg-slate-950/95 text-white text-[10.5px] font-extrabold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap leading-none">
-                          {item.name}
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+          {/* Navigation Items */}
+          <nav className="space-y-1">
+            {navMenuItems.map((item) => {
+              const IconComp = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setIsMobileOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer group ${
+                    isActive
+                      ? 'bg-[#EBF2FF] text-[#2516FF]'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <IconComp
+                    className={`w-4 h-4 transition-colors ${
+                      isActive ? 'text-[#2516FF]' : 'text-slate-400 group-hover:text-slate-600'
+                    }`}
+                  />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* PROFILE SECTION Bottom Profile Block */}
-        <div className="p-3 border-t border-slate-100 flex items-center gap-3 bg-white relative">
-          <button 
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center justify-between w-full hover:bg-slate-50 p-1.5 rounded-xl transition-colors cursor-pointer group/profile relative"
-          >
-            <div className={`flex items-center gap-2.5 ${isCollapsed ? 'mx-auto' : ''}`}>
-              <img 
-                src={currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"} 
-                alt={`${currentUser.firstName} ${currentUser.lastName}`} 
-                className="w-8 h-8 rounded-full object-cover border border-slate-100 shrink-0"
-              />
-              {!isCollapsed && (
-                <div className="text-left">
-                  <p className="text-xs font-extrabold text-slate-900 leading-none truncate max-w-[120px]">{currentUser.firstName} {currentUser.lastName}</p>
-                  <p className="text-[10px] text-slate-400 leading-none mt-1 truncate max-w-[120px]">{currentUser.userRole || "Briefora Admin"}</p>
-                </div>
-              )}
+        {/* Bottom Sidebar Content: Upgrade Card & Profile */}
+        <div className="space-y-4 pt-4 border-t border-slate-100">
+          
+          {/* Upgrade Card */}
+          <div className="bg-[#F4F7FF] border border-blue-100/80 rounded-2xl p-4 space-y-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100/80 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#2516FF]" />
             </div>
-            {!isCollapsed && <MoreHorizontal className="w-4 h-4 text-slate-400" />}
+            <div>
+              <p className="font-bold text-slate-900 text-xs">Upgrade to Pro</p>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Unlock more features and boost your productivity.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-full bg-[#2516FF] hover:bg-[#1f10e6] text-white font-medium text-xs py-2 rounded-xl transition-all shadow-2xs cursor-pointer text-center"
+            >
+              Upgrade Now
+            </button>
+          </div>
 
-            {/* Profile Tooltip when Minimized */}
-            {isCollapsed && (
-              <div className="absolute left-14 pl-2.5 z-50 pointer-events-none opacity-0 group-hover/profile:opacity-100 transition-opacity duration-200">
-                <div className="bg-slate-950/95 text-white text-[10px] font-extrabold px-3 py-2 rounded-lg shadow-xl whitespace-nowrap text-left leading-tight">
-                  <p className="font-extrabold text-white">{currentUser.firstName} {currentUser.lastName}</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">{currentUser.userRole || "Briefora Admin"}</p>
+          {/* User Profile Footer Pill */}
+          <div className="relative">
+            <div
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="border border-slate-200/80 rounded-2xl p-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[#2516FF] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  {currentUser.firstName?.[0]?.toUpperCase() || 'S'}
+                </div>
+                <div className="truncate text-left">
+                  <p className="text-xs font-bold text-slate-900 truncate">{currentUser.firstName || 'Saad'}</p>
+                  <p className="text-[10px] text-slate-400 truncate">Workspace</p>
                 </div>
               </div>
-            )}
-          </button>
+              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            </div>
 
-          {/* Quick Profile context menu floating */}
-          <AnimatePresence>
-            {isProfileOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute bottom-16 left-2 right-2 bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-50 text-xs"
-                >
-                  <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                    <p className="font-bold text-slate-950">Logged in as</p>
-                    <p className="text-[10px] text-slate-500 truncate">{currentUser.email}</p>
-                  </div>
-                  <button 
-                    onClick={onLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl font-bold text-left transition-colors cursor-pointer"
+            {/* Logout Dropdown Popup */}
+            <AnimatePresence>
+              {isProfileOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsProfileOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    className="absolute bottom-14 left-0 right-0 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 z-40 text-xs space-y-1"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Log Out</span>
-                  </button>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <p className="font-bold text-slate-900">{currentUser.firstName} {currentUser.lastName}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{currentUser.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl font-semibold text-left cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out</span>
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
         </div>
       </aside>
 
-      {/* 🧱 MAIN VIEWPORT CONTAINER */}
-      <main className="flex-1 h-full flex flex-col overflow-hidden relative z-10 w-full">
-        
-        {/* 🧱 TOP GLOBAL NAVIGATION HEADER */}
-        <header className="h-14 bg-white border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between select-none">
-          {/* Breadcrumb & Mobile hamburger toggle */}
-          <div className="flex items-center gap-2.5">
+      {/* 🖥️ MAIN VIEWPORT CONTAINER */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+
+        {/* 🔝 TOP HEADER BAR */}
+        <header className="bg-white border-b border-slate-200/80 px-6 py-3.5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 flex-1">
             <button
+              type="button"
               onClick={() => setIsMobileOpen(true)}
-              className="md:hidden text-slate-500 hover:text-slate-850 p-1.5 hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-              title="Open Navigation"
+              className="lg:hidden text-slate-500 p-1.5 rounded-lg hover:bg-slate-100"
             >
-              <Menu className="w-4.5 h-4.5" />
+              <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-              <Home className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-800 font-bold capitalize">{activeTab}</span>
+
+            {/* Search Capsule Input */}
+            <div className="bg-white border border-slate-200/90 rounded-full px-4 py-2 flex items-center gap-2 text-xs text-slate-400 w-full max-w-sm shadow-2xs focus-within:border-blue-500 transition-colors">
+              <Search className="w-4 h-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search anything..."
+                className="bg-transparent border-none outline-none text-xs text-slate-800 placeholder-slate-400 flex-1"
+              />
+              <kbd className="px-1.5 py-0.5 rounded border border-slate-200 text-[10px] text-slate-400 font-mono">⌘ K</kbd>
             </div>
           </div>
 
-          {/* Quick top menu options */}
+          {/* Top Right User Controls */}
           <div className="flex items-center gap-3">
-            <button 
-              type="button"
-              onClick={() => setShowUpgradeModal(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                freeCreditsRemaining > 0
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-              }`}
-            >
-              {freeCreditsRemaining > 0 ? (
-                <>
-                  <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
-                  <span>1 Free Brief Credit</span>
-                </>
-              ) : (
-                <>
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
-                  <span>0 Credits - Upgrade Plan</span>
-                </>
-              )}
-            </button>
-
-            <button className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer relative">
+            {/* Notification Bell */}
+            <div className="w-9 h-9 rounded-full bg-white border border-slate-200/90 flex items-center justify-center relative text-slate-600 hover:text-slate-900 shadow-2xs cursor-pointer transition-colors">
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#5956E9] rounded-full" />
-            </button>
-            <button className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
-              <Settings className="w-4 h-4" />
-            </button>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#2516FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                3
+              </span>
+            </div>
+
+            {/* User Avatar Circle */}
+            <div className="w-9 h-9 rounded-full bg-[#2516FF] text-white font-bold flex items-center justify-center text-sm shadow-2xs cursor-pointer">
+              {currentUser.firstName?.[0]?.toUpperCase() || 'S'}
+            </div>
           </div>
         </header>
 
-        {/* 🧱 INTERNAL CANVAS BODY (Scrollable contents) */}
-        <section className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
-          
-          {/* Layout greeting & welcome bar */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* 📜 MAIN DASHBOARD SCROLL CONTENT */}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+
+          {/* GREETING & ACTION BUTTON ROW */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Welcome back, {currentUser.firstName}</h1>
-              <p className="text-xs font-medium text-slate-400 mt-0.5">Everything you need to monitor, automate, and streamline your briefs.</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Welcome back, {currentUser.firstName || 'Saad'} 👋
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Here's what's happening with your workspace today.
+              </p>
             </div>
 
-            {/* Date period dropdown tags */}
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(false)}
-                  className="bg-white px-3.5 py-2 rounded-xl text-[11px] font-bold text-slate-600 border border-slate-200 hover:border-slate-350 flex items-center gap-1.5 transition-all outline-none cursor-pointer"
-                >
-                  <span>{activeDateRange}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <button
+              type="button"
+              onClick={() => {
+                if (freeCreditsRemaining <= 0) {
+                  setShowUpgradeModal(true);
+                } else {
+                  setShowNewBriefModal(true);
+                }
+              }}
+              className="bg-[#2516FF] hover:bg-[#1f10e6] text-white font-medium text-xs px-4 py-2.5 rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Brief</span>
+            </button>
+          </div>
+
+          {/* 📊 TOP 4 METRIC CARDS ROW */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Total Briefs */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs relative hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-blue-50/90 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-[#2516FF]" />
+                </div>
+                <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
+              <p className="text-xs text-slate-500 font-medium mt-3">Total Briefs</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1 font-geist">24</p>
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <span className="text-emerald-600 font-semibold">↑ 12%</span>
+                <span className="text-slate-400">from last week</span>
+              </div>
+            </div>
 
-              <div className="bg-white px-3.5 py-2 rounded-xl text-[11px] font-bold text-slate-600 border border-slate-200 flex items-center gap-2 transition-all">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>7 Jun, 2025</span>
-                <span className="text-slate-300">—</span>
-                <span>13 Jun, 2025</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            {/* Card 2: Active Projects */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs relative hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-blue-50/90 flex items-center justify-center">
+                  <Folder className="w-5 h-5 text-[#2516FF]" />
+                </div>
+                <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-3">Active Projects</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1 font-geist">8</p>
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <span className="text-emerald-600 font-semibold">↑ 8%</span>
+                <span className="text-slate-400">from last week</span>
+              </div>
+            </div>
+
+            {/* Card 3: Completed */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs relative hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-blue-50/90 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#2516FF]" />
+                </div>
+                <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-3">Completed</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1 font-geist">16</p>
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <span className="text-emerald-600 font-semibold">↑ 20%</span>
+                <span className="text-slate-400">from last week</span>
+              </div>
+            </div>
+
+            {/* Card 4: Team Members */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs relative hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-blue-50/90 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#2516FF]" />
+                </div>
+                <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-3">Team Members</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1 font-geist">5</p>
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <span className="text-slate-400 font-medium">No change</span>
               </div>
             </div>
           </div>
 
-          {/* ⚡ STRATEGY BRIEF GENERATOR WIDGET */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[11px] font-bold uppercase tracking-wider border border-blue-500/30">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Briefora Strategy Engine</span>
+          {/* 🧩 MIDDLE SECTION: 2 COLUMNS LAYOUT */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {/* ⬅️ LEFT COLUMN (2 SPANS) */}
+            <div className="lg:col-span-2 space-y-5">
+
+              {/* 📈 BRIEFS OVERVIEW CHART CARD */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-slate-900 text-base">Briefs Overview</h2>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-600 font-medium bg-white hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{timeRange}</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                  </div>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Generate Instant Client Strategy Brief
-                </h2>
-                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                  Transform raw client intake into an interactive, high-converting strategy deck in 60 seconds.
-                </p>
+
+                {/* Vector SVG Chart Canvas Matching Reference Image */}
+                <div className="relative w-full h-64 pt-2">
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 600 220" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2516FF" stopOpacity="0.22" />
+                        <stop offset="100%" stopColor="#2516FF" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Horizontal Grid lines */}
+                    <line x1="40" y1="20" x2="580" y2="20" stroke="#F1F5F9" strokeWidth="1" />
+                    <line x1="40" y1="60" x2="580" y2="60" stroke="#F1F5F9" strokeWidth="1" />
+                    <line x1="40" y1="100" x2="580" y2="100" stroke="#F1F5F9" strokeWidth="1" />
+                    <line x1="40" y1="140" x2="580" y2="140" stroke="#F1F5F9" strokeWidth="1" />
+                    <line x1="40" y1="180" x2="580" y2="180" stroke="#F1F5F9" strokeWidth="1" />
+
+                    {/* Y Axis Labels */}
+                    <text x="15" y="24" fill="#94A3B8" fontSize="11" textAnchor="end">30</text>
+                    <text x="15" y="64" fill="#94A3B8" fontSize="11" textAnchor="end">25</text>
+                    <text x="15" y="104" fill="#94A3B8" fontSize="11" textAnchor="end">20</text>
+                    <text x="15" y="144" fill="#94A3B8" fontSize="11" textAnchor="end">15</text>
+                    <text x="15" y="184" fill="#94A3B8" fontSize="11" textAnchor="end">10</text>
+                    <text x="15" y="214" fill="#94A3B8" fontSize="11" textAnchor="end">0</text>
+
+                    {/* Filled Gradient Area */}
+                    <path
+                      d="M 50,160 Q 90,120 130,140 T 210,90 T 290,110 T 370,120 T 450,70 T 530,90 T 570,50 L 570,180 L 50,180 Z"
+                      fill="url(#chartGradient)"
+                    />
+
+                    {/* Blue Smooth Curve Line */}
+                    <path
+                      d="M 50,160 Q 90,120 130,140 T 210,90 T 290,110 T 370,120 T 450,70 T 530,90 T 570,50"
+                      fill="none"
+                      stroke="#2516FF"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Data Points */}
+                    <circle cx="50" cy="160" r="3.5" fill="#2516FF" />
+                    <circle cx="110" cy="130" r="3.5" fill="#2516FF" />
+                    <circle cx="170" cy="150" r="3.5" fill="#2516FF" />
+                    <circle cx="230" cy="95" r="3.5" fill="#2516FF" />
+                    <circle cx="290" cy="110" r="5" fill="#2516FF" stroke="#FFFFFF" strokeWidth="2" />
+                    <circle cx="350" cy="130" r="3.5" fill="#2516FF" />
+                    <circle cx="410" cy="105" r="3.5" fill="#2516FF" />
+                    <circle cx="470" cy="75" r="3.5" fill="#2516FF" />
+                    <circle cx="530" cy="95" r="3.5" fill="#2516FF" />
+                    <circle cx="570" cy="50" r="3.5" fill="#2516FF" />
+
+                    {/* Active Point Tooltip Badge '18' on May 16 */}
+                    <g transform="translate(278, 70)">
+                      <rect x="0" y="0" width="24" height="20" rx="6" fill="#2516FF" />
+                      <text x="12" y="14" fill="#FFFFFF" fontSize="11" fontWeight="bold" textAnchor="middle">18</text>
+                    </g>
+                  </svg>
+
+                  {/* X Axis Date Labels */}
+                  <div className="flex justify-between pl-10 pr-2 pt-2 text-[11px] text-slate-400 font-medium">
+                    <span>May 1</span>
+                    <span>May 6</span>
+                    <span>May 11</span>
+                    <span className="text-[#2516FF] font-bold">May 16</span>
+                    <span>May 21</span>
+                    <span>May 26</span>
+                    <span>May 31</span>
+                  </div>
+                </div>
               </div>
 
-              <form onSubmit={handleGenerateBrief} className="flex flex-col sm:flex-row gap-3 min-w-[300px] lg:min-w-[420px]">
-                <input
-                  type="text"
-                  placeholder="Client / Project Name"
-                  value={briefClientName}
-                  onChange={(e) => setBriefClientName(e.target.value)}
-                  className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 flex-1"
-                />
+              {/* 📁 TOP PROJECTS CARD */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-slate-900 text-base">Top Projects</h2>
+                  <button
+                    type="button"
+                    className="border border-slate-200 rounded-xl px-3 py-1 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 cursor-pointer"
+                  >
+                    View all
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Item 1 */}
+                  <div className="flex items-center justify-between gap-4 p-2.5 rounded-xl hover:bg-slate-50/80 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2516FF] flex items-center justify-center shrink-0">
+                        <Pencil className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-900 truncate">Breifora Redesign</p>
+                        <p className="text-[11px] text-slate-400 truncate">Updated 2 hours ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-1.5 w-32 sm:w-44 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="bg-[#2516FF] h-full w-[75%] rounded-full" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600 w-8 text-right">75%</span>
+                      <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Item 2 */}
+                  <div className="flex items-center justify-between gap-4 p-2.5 rounded-xl hover:bg-slate-50/80 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2516FF] flex items-center justify-center shrink-0">
+                        <LayoutTemplate className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-900 truncate">AI Landing Page</p>
+                        <p className="text-[11px] text-slate-400 truncate">Updated yesterday</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-1.5 w-32 sm:w-44 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="bg-[#2516FF] h-full w-[60%] rounded-full" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600 w-8 text-right">60%</span>
+                      <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Item 3 */}
+                  <div className="flex items-center justify-between gap-4 p-2.5 rounded-xl hover:bg-slate-50/80 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#2516FF] flex items-center justify-center shrink-0">
+                        <Smartphone className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-900 truncate">Mobile App Concept</p>
+                        <p className="text-[11px] text-slate-400 truncate">Updated 2 days ago</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-1.5 w-32 sm:w-44 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="bg-[#2516FF] h-full w-[40%] rounded-full" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600 w-8 text-right">40%</span>
+                      <button type="button" className="text-slate-300 hover:text-slate-500 cursor-pointer">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* ➡️ RIGHT COLUMN (1 SPAN) */}
+            <div className="space-y-5">
+
+              {/* 🔔 RECENT ACTIVITY CARD */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-slate-900 text-base">Recent Activity</h2>
+                  <button
+                    type="button"
+                    className="border border-slate-200 rounded-xl px-3 py-1 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 cursor-pointer"
+                  >
+                    View all
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Activity 1 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-800 leading-snug">
+                        AI Brief <span className="font-semibold">"Landing Page Design"</span> updated
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">2 minutes ago</p>
+                    </div>
+                  </div>
+
+                  {/* Activity 2 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Folder className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-800 leading-snug">
+                        New project <span className="font-semibold">"Breifora Redesign"</span> created
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">1 hour ago</p>
+                    </div>
+                  </div>
+
+                  {/* Activity 3 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Users className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-800 leading-snug">
+                        Team member <span className="font-semibold">Alina</span> joined the workspace
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">3 hours ago</p>
+                    </div>
+                  </div>
+
+                  {/* Activity 4 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-800 leading-snug">
+                        AI Brief <span className="font-semibold">"Mobile App Concept"</span> completed
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">5 hours ago</p>
+                    </div>
+                  </div>
+
+                  {/* Activity 5 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-800 leading-snug">
+                        Template <span className="font-semibold">"SaaS Landing Page"</span> used
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Yesterday</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ⚡ QUICK ACTIONS CARD */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-4">
+                <h2 className="font-bold text-slate-900 text-base">Quick Actions</h2>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* Action 1 */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (freeCreditsRemaining <= 0) {
+                        setShowUpgradeModal(true);
+                      } else {
+                        setShowNewBriefModal(true);
+                      }
+                    }}
+                    className="bg-[#F8FAFC] border border-slate-100 hover:border-blue-200 rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-blue-50/40 text-center group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2516FF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <FileText className="w-4 h-4 text-[#2516FF]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-700">New Brief</span>
+                  </button>
+
+                  {/* Action 2 */}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewBriefModal(true)}
+                    className="bg-[#F8FAFC] border border-slate-100 hover:border-blue-200 rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-blue-50/40 text-center group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2516FF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Folder className="w-4 h-4 text-[#2516FF]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-700">New Project</span>
+                  </button>
+
+                  {/* Action 3 */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('templates')}
+                    className="bg-[#F8FAFC] border border-slate-100 hover:border-blue-200 rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-blue-50/40 text-center group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2516FF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <LayoutGrid className="w-4 h-4 text-[#2516FF]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-700">Browse Templates</span>
+                  </button>
+
+                  {/* Action 4 */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('team')}
+                    className="bg-[#F8FAFC] border border-slate-100 hover:border-blue-200 rounded-xl p-3.5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-blue-50/40 text-center group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#2516FF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <UserPlus className="w-4 h-4 text-[#2516FF]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-700">Invite Team</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Render newly generated briefs list if any */}
+          {newlyCreatedBriefs.length > 0 && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Recently Generated Strategy Briefs</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {newlyCreatedBriefs.map((b) => (
+                  <div key={b.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900">{b.client}</p>
+                      <p className="text-[10px] text-slate-400">{b.industry} • {b.createdAt}</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-md">
+                      Active
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
+
+      {/* 🪄 NEW BRIEF GENERATOR MODAL */}
+      <AnimatePresence>
+        {showNewBriefModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNewBriefModal(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative z-10 w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2516FF] flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-[#2516FF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Generate AI Brief</h3>
+                    <p className="text-[11px] text-slate-400">1 Free Credit Available</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowNewBriefModal(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateBriefSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Client / Project Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Acme Corp Rebrand"
+                    value={clientNameInput}
+                    onChange={(e) => setClientNameInput(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Industry / Focus Area</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. B2B SaaS & Product Strategy"
+                    value={industryInput}
+                    onChange={(e) => setIndustryInput(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  disabled={isGeneratingBrief}
-                  className="px-5 py-2.5 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                  disabled={isGenerating}
+                  className="w-full py-3 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
-                  {isGeneratingBrief ? (
-                    <span>Compiling Brief...</span>
+                  {isGenerating ? (
+                    <span>Compiling Strategy Brief...</span>
                   ) : (
                     <>
                       <Zap className="w-4 h-4 fill-white" />
-                      <span>Generate Brief ({freeCreditsRemaining} Free)</span>
+                      <span>Generate Strategy Deck ({freeCreditsRemaining} Free)</span>
                     </>
                   )}
                 </button>
               </form>
-            </div>
-
-            {/* Render newly generated brief card if any */}
-            {generatedBriefs.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent Generated Briefs</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {generatedBriefs.map((b) => (
-                    <div key={b.id} className="p-3.5 bg-slate-800/60 border border-slate-700/80 rounded-xl flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-bold text-white">{b.client}</p>
-                        <p className="text-[10px] text-slate-400">{b.industry} • {b.createdAt}</p>
-                      </div>
-                      <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold rounded-md">
-                        Ready
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            </motion.div>
           </div>
-
-          {/* 🧱 THREE-COLUMN METRIC CARD GRID LAYER (Perfect breakdown match) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            
-            {/* Outreach Sent Stat Card */}
-            <div className="bg-white border border-slate-200/90 rounded-[20px] p-5 flex flex-col justify-between relative shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-extrabold text-slate-950 uppercase tracking-widest text-[10px]">Outreach sent</span>
-                <button className="text-slate-450 hover:text-slate-600 p-1 rounded-md cursor-pointer">
-                  <MoreHorizontal className="w-4 h-4 text-slate-300" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 divide-x divide-slate-100">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Drafted</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <FileText className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">42</span>
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowUp className="w-2 h-2" /> 14%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1 pl-4">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Sent</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">68</span>
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowUp className="w-2 h-2" /> 17%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-slate-50 pt-2.5">
-                <span className="text-[10px] text-slate-400 font-medium">vs last week</span>
-              </div>
-            </div>
-
-            {/* Lead Activity Stat Card */}
-            <div className="bg-white border border-slate-200/90 rounded-[20px] p-5 flex flex-col justify-between relative shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-extrabold text-slate-950 uppercase tracking-widest text-[10px]">Lead activity</span>
-                <button className="text-slate-450 hover:text-slate-600 p-1 rounded-md cursor-pointer">
-                  <MoreHorizontal className="w-4 h-4 text-slate-300" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 divide-x divide-slate-100">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Opened</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <MailOpen className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">13</span>
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowUp className="w-2 h-2" /> 5%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1 pl-4">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Replied</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <CornerUpLeft className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">12</span>
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowUp className="w-2 h-2" /> 2%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-slate-50 pt-2.5">
-                <span className="text-[10px] text-slate-400 font-medium">vs last week</span>
-              </div>
-            </div>
-
-            {/* Conversions Stat Card */}
-            <div className="bg-white border border-slate-200/90 rounded-[20px] p-5 flex flex-col justify-between relative shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-extrabold text-slate-950 uppercase tracking-widest text-[10px]">Conversions</span>
-                <button className="text-slate-450 hover:text-slate-600 p-1 rounded-md cursor-pointer">
-                  <MoreHorizontal className="w-4 h-4 text-slate-300" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 divide-x divide-slate-100">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Booked</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <CalendarCheck className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">7</span>
-                    <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowUp className="w-2 h-2" /> 1%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1 pl-4">
-                  <p className="text-[10px] font-bold text-[#94A3B8] uppercase">Ignored</p>
-                  <div className="flex items-center gap-2 pt-1">
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                    <span className="text-xl font-black text-slate-900">16</span>
-                    <span className="text-[9px] font-extrabold text-rose-600 bg-rose-50 border border-rose-100 px-1 py-0.5 rounded-md flex items-center gap-0.5">
-                      <ArrowDown className="w-2 h-2" /> 5%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-slate-50 pt-2.5">
-                <span className="text-[10px] text-slate-400 font-medium">vs last week</span>
-              </div>
-            </div>
-
-          </div>
-
-          {/* 🧱 DATA TABLE CONTROL BAR & HISTORICAL DATA LOG */}
-          <div className="bg-white rounded-2xl border border-slate-200/95 overflow-hidden shadow-xs">
-            
-            {/* Control Strip Headers */}
-            <div className="p-5 border-b border-slate-150 space-y-4">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <h3 className="font-extrabold text-slate-900 text-sm">Recent messages</h3>
-                
-                {/* Control search + status + organization + tags filters dropdowns */}
-                <div className="flex flex-wrap items-center gap-2">
-                  
-                  {/* Local messages search bar */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search messages" 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-48 sm:w-56 bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold placeholder-slate-400 focus:outline-none focus:border-[#5956E9] focus:ring-1 focus:ring-[#5956E9] focus:bg-white transition-all"
-                    />
-                    {searchTerm && (
-                      <button 
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 bg-slate-200/40 hover:bg-slate-250/70 rounded-full"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Date range selection */}
-                  <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 flex items-center gap-1.5 cursor-pointer hover:border-slate-300">
-                    <span>{activeDateRange}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-
-                  {/* Detailed date duration visual capsule */}
-                  <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 hidden lg:flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>7 Jun, 2025 - 13 Jun, 2025</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-
-                  {/* Status Dropdown */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
-                        setShowStatusDropdown(!showStatusDropdown);
-                        setShowOrgDropdown(false);
-                        setShowTagDropdown(false);
-                      }}
-                      className={`px-3 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                        statusFilter !== 'All' 
-                          ? 'border-[#5956E9] text-[#5956E9] bg-[#5956E9]/5' 
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
-                      <span>Status: {statusFilter}</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {showStatusDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowStatusDropdown(false)} />
-                        <div className="absolute right-0 mt-1.5 w-36 bg-white border border-slate-100 shadow-xl rounded-xl py-1 z-20 text-xs">
-                          {statusOptions.map(opt => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                setStatusFilter(opt);
-                                setShowStatusDropdown(false);
-                                setCurrentPage(1);
-                              }}
-                              className="w-full text-left px-3.5 py-2 hover:bg-slate-50 font-bold text-slate-700 flex items-center justify-between"
-                            >
-                              <span>{opt}</span>
-                              {statusFilter === opt && <Check className="w-3 h-3 text-[#5956E9]" />}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Organization Dropdown */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
-                        setShowOrgDropdown(!showOrgDropdown);
-                        setShowStatusDropdown(false);
-                        setShowTagDropdown(false);
-                      }}
-                      className={`px-3 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                        orgFilter !== 'All' 
-                          ? 'border-[#5956E9] text-[#5956E9] bg-[#5956E9]/5' 
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>Org: {orgFilter}</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {showOrgDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowOrgDropdown(false)} />
-                        <div className="absolute right-0 mt-1.5 w-44 max-h-56 overflow-y-auto bg-white border border-slate-100 shadow-xl rounded-xl py-1 z-20 text-xs">
-                          {orgOptions.map(opt => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                setOrgFilter(opt);
-                                setShowOrgDropdown(false);
-                                setCurrentPage(1);
-                              }}
-                              className="w-full text-left px-3.5 py-2 hover:bg-slate-50 font-bold text-slate-700 flex items-center justify-between"
-                            >
-                              <span>{opt}</span>
-                              {orgFilter === opt && <Check className="w-3 h-3 text-[#5956E9]" />}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Tags Dropdown */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
-                        setShowTagDropdown(!showTagDropdown);
-                        setShowStatusDropdown(false);
-                        setShowOrgDropdown(false);
-                      }}
-                      className={`px-3 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                        tagFilter !== 'All' 
-                          ? 'border-[#5956E9] text-[#5956E9] bg-[#5956E9]/5' 
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>Tags: {tagFilter}</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {showTagDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowTagDropdown(false)} />
-                        <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-100 shadow-xl rounded-xl py-1 z-20 text-xs text-slate-700">
-                          {tagOptions.map(opt => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                setTagFilter(opt);
-                                setShowTagDropdown(false);
-                                setCurrentPage(1);
-                              }}
-                              className="w-full text-left px-3.5 py-2 hover:bg-slate-50 font-bold text-slate-700 flex items-center justify-between"
-                            >
-                              <span>{opt}</span>
-                              {tagFilter === opt && <Check className="w-3 h-3 text-[#5956E9]" />}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-            {/* The Core Data Grid/Table */}
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse min-w-[1000px]">
-                <thead>
-                  <tr className="border-b border-slate-150 text-[10px] font-extrabold text-[#94A3B8] uppercase tracking-wider select-none bg-slate-50/70">
-                    <td className="w-12 py-3.5 px-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                        checked={paginatedMessages.length > 0 && paginatedMessages.every(m => selectedIds.includes(m.id))}
-                        className="accent-[#5956E9] h-3.5 w-3.5 rounded border-slate-300 cursor-pointer"
-                      />
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-48">
-                      <div className="flex items-center gap-1">
-                        <span>Lead name</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-48">
-                      Email Address
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8]">
-                      <div className="flex items-center gap-1">
-                        <span>Message</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-28">
-                      <div className="flex items-center gap-1">
-                        <span>Date</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-32">
-                      <div className="flex items-center gap-1">
-                        <span>Status</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-32">
-                      <div className="flex items-center gap-1">
-                        <span>Organization</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-[#94A3B8] w-36">
-                      <div className="flex items-center gap-1">
-                        <span>Tags</span>
-                        <span className="text-slate-300">↑↓</span>
-                      </div>
-                    </td>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedMessages.length > 0 ? (
-                    paginatedMessages.map((msg) => {
-                      const isSelected = selectedIds.includes(msg.id);
-                      const statusStyle = getStatusStyle(msg.status);
-                      
-                      return (
-                        <tr 
-                          key={msg.id} 
-                          className={`hover:bg-[#F8F9FC]/40 text-xs font-semibold leading-relaxed transition-colors ${
-                            isSelected ? 'bg-[#5956E9]/5 hover:bg-[#5956E9]/10' : ''
-                          }`}
-                        >
-                          <td className="py-2.5 px-4 text-center">
-                            <input 
-                              type="checkbox" 
-                              checked={isSelected}
-                              onChange={(e) => handleSelectRow(msg.id, e.target.checked)}
-                              className="accent-[#5956E9] h-3.5 w-3.5 rounded border-slate-350 cursor-pointer"
-                            />
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <div className="flex items-center gap-2">
-                              <img 
-                                src={msg.avatar} 
-                                alt={msg.name} 
-                                className="w-6.5 h-6.5 rounded-full object-cover border border-slate-100" 
-                              />
-                              <span className="text-slate-900 font-extrabold">{msg.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-400">
-                            {msg.email}
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-600 truncate max-w-xs font-semibold">
-                            {msg.message}
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-400">
-                            {msg.date}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
-                              {msg.status === 'Booked' && <CalendarCheck className={`w-3 h-3 ${statusStyle.iconColor}`} />}
-                              {msg.status === 'Replied' && <CornerUpLeft className={`w-3 h-3 ${statusStyle.iconColor}`} />}
-                              {msg.status === 'Opened' && <MailOpen className={`w-3 h-3 ${statusStyle.iconColor}`} />}
-                              {msg.status === 'Ignored' && <EyeOff className={`w-3 h-3 ${statusStyle.iconColor}`} />}
-                              <span>{msg.status}</span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-500 font-bold flex items-center gap-1.5 pt-4">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{msg.organization}</span>
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <span className={`inline-block px-2.5 py-1 text-[10px] font-extrabold rounded-md border ${getTagStyle(msg.tags)}`}>
-                              {msg.tags}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        <div className="flex flex-col items-center justify-center space-y-2">
-                          <SlidersHorizontal className="w-8 h-8 text-slate-300" />
-                          <p className="font-bold">No messages match selected filters</p>
-                          <button 
-                            onClick={() => {
-                              setSearchTerm('');
-                              setStatusFilter('All');
-                              setOrgFilter('All');
-                              setTagFilter('All');
-                            }}
-                            className="text-xs text-[#2516FF] font-bold hover:underline cursor-pointer"
-                          >
-                            Reset all filters
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Footer Row */}
-            <div className="p-4 border-t border-slate-150 flex items-center justify-between select-none">
-              
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-extrabold rounded-xl text-slate-650 transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Previous</span>
-                </button>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-extrabold rounded-xl text-slate-650 transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Responsive paginated marker numbers enum */}
-              <div className="flex items-center gap-1">
-                {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`min-w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      currentPage === page 
-                        ? 'bg-[#2516FF] text-white shadow-xs' 
-                        : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-            </div>
-
-          </div>
-
-        </section>
-      </main>
+        )}
+      </AnimatePresence>
 
       {/* 🚀 UPGRADE PLAN PAYWALL MODAL */}
       <AnimatePresence>
         {showUpgradeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-            {/* Backdrop */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowUpgradeModal(false)}
-              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs"
             />
 
-            {/* Modal Card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative z-10 w-full max-w-4xl bg-[#0B0F17] border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl overflow-hidden my-auto"
+              className="relative z-10 w-full max-w-4xl bg-white border border-slate-200/95 rounded-3xl p-6 sm:p-8 text-slate-900 shadow-2xl overflow-hidden my-auto"
             >
-              {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setShowUpgradeModal(false)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 transition-colors cursor-pointer"
+                className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Modal Header */}
               <div className="text-center max-w-2xl mx-auto mb-8 space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2516FF]/20 text-blue-400 text-xs font-bold uppercase tracking-wider border border-[#2516FF]/30">
-                  <Zap className="w-3.5 h-3.5 fill-blue-400" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider border border-blue-100/80">
+                  <Zap className="w-3.5 h-3.5 fill-blue-600" />
                   <span>1-Credit Trial Completed</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
                   Unlock Unlimited Client Strategy Briefs
                 </h2>
-                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
                   You have used your 1 free strategy brief generation. Choose a plan to continue building client magic links, generating strategic blueprints, and closing high-value retainers.
                 </p>
 
@@ -1310,7 +870,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     type="button"
                     onClick={() => setModalBilling('monthly')}
                     className={`text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                      modalBilling === 'monthly' ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+                      modalBilling === 'monthly' ? 'text-[#2516FF]' : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Billed Monthly
@@ -1319,12 +879,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     type="button"
                     onClick={() => setModalBilling(modalBilling === 'monthly' ? 'yearly' : 'monthly')}
                     className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 relative ${
-                      modalBilling === 'yearly' ? 'bg-[#2516FF]' : 'bg-slate-800'
+                      modalBilling === 'yearly' ? 'bg-[#2516FF]' : 'bg-slate-200'
                     }`}
                   >
                     <motion.div
                       layout
-                      className="w-5 h-5 rounded-full bg-white shadow-sm"
+                      className="w-5 h-5 rounded-full bg-white shadow-xs"
                       animate={{ x: modalBilling === 'yearly' ? 20 : 0 }}
                       transition={{ type: "spring", stiffness: 350, damping: 25 }}
                     />
@@ -1333,10 +893,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     type="button"
                     onClick={() => setModalBilling('yearly')}
                     className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      modalBilling === 'yearly' ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+                      modalBilling === 'yearly' ? 'text-[#2516FF]' : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
-                    Billed Annually <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Save 20%</span>
+                    Billed Annually <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-100">Save 20%</span>
                   </button>
                 </div>
               </div>
@@ -1344,30 +904,30 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               {/* 3 Pricing Options Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
                 {/* STARTER CARD */}
-                <div className="bg-[#121A2D] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
+                <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 hover:border-slate-300 transition-all shadow-3xs">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-white">Starter</h3>
-                      <span className="text-[10px] font-bold uppercase bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-700">Sandbox</span>
+                      <h3 className="text-lg font-bold text-slate-900">Starter</h3>
+                      <span className="text-[10px] font-bold uppercase bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-200">Sandbox</span>
                     </div>
-                    <p className="text-xs text-slate-400">For independent creators establishing their workflow.</p>
+                    <p className="text-xs text-slate-500">For independent creators establishing their workflow.</p>
                     <div className="py-2">
-                      <p className="text-2xl font-black text-white font-mono">
+                      <p className="text-2xl font-black text-slate-900 font-mono">
                         {modalBilling === 'yearly' ? 'PKR 17,000' : 'PKR 2,500'}
                       </p>
-                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                      <p className="text-[10px] text-slate-500">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
                     </div>
-                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                    <ul className="space-y-2 text-xs text-slate-600 pt-2">
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#2516FF] shrink-0" />
                         <span>1 Active magic client link</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#2516FF] shrink-0" />
                         <span>Tactile core typographic tracks</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-[#2516FF] shrink-0" />
                         <span>Direct raw data exports</span>
                       </li>
                     </ul>
@@ -1379,40 +939,40 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       setShowUpgradeModal(false);
                       navigate(`/checkout?plan=starter&billing=${modalBilling}`);
                     }}
-                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer"
+                    className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl transition-all border border-slate-200/80 hover:border-slate-300 shadow-3xs cursor-pointer"
                   >
                     Upgrade to Starter
                   </button>
                 </div>
 
                 {/* PRO CARD (HIGHLIGHTED) */}
-                <div className="bg-[#121A2D] border-2 border-[#2516FF] rounded-2xl p-6 flex flex-col justify-between space-y-6 relative shadow-xl shadow-[#2516FF]/10">
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2516FF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
+                <div className="bg-white border-2 border-[#2516FF] rounded-2xl p-6 flex flex-col justify-between space-y-6 relative shadow-md shadow-blue-500/5">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2516FF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-xs">
                     Most Popular
                   </span>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-white">Pro</h3>
-                      <span className="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 px-2.5 py-0.5 rounded-full border border-blue-500/30">Agencies</span>
+                    <div className="flex items-center justify-between pt-1">
+                      <h3 className="text-lg font-bold text-slate-900">Pro</h3>
+                      <span className="text-[10px] font-bold uppercase bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">Agencies</span>
                     </div>
-                    <p className="text-xs text-slate-400">For active freelance designers and brand strategists.</p>
+                    <p className="text-xs text-slate-500">For active freelance designers and brand strategists.</p>
                     <div className="py-2">
-                      <p className="text-2xl font-black text-white font-mono">
+                      <p className="text-2xl font-black text-slate-900 font-mono">
                         {modalBilling === 'yearly' ? 'PKR 35,000' : 'PKR 5,000'}
                       </p>
-                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                      <p className="text-[10px] text-slate-500">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
                     </div>
-                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                    <ul className="space-y-2 text-xs text-slate-600 pt-2">
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                         <span>Unlimited active brief links</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                         <span>Strategic blueprint compiler</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                         <span>Premium PDF exports & branding</span>
                       </li>
                     </ul>
@@ -1424,37 +984,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       setShowUpgradeModal(false);
                       navigate(`/checkout?plan=pro&billing=${modalBilling}`);
                     }}
-                    className="w-full py-3 px-4 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-lg cursor-pointer"
+                    className="w-full py-3 px-4 bg-[#2516FF] hover:bg-[#1f10e6] text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
                   >
                     Upgrade to Pro
                   </button>
                 </div>
 
                 {/* STUDIO CARD */}
-                <div className="bg-[#121A2D] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
+                <div className="bg-slate-50/60 border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 hover:border-slate-300 transition-all shadow-3xs">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-white">Studio</h3>
-                      <span className="text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-500/30">Enterprise</span>
+                      <h3 className="text-lg font-bold text-slate-900">Studio</h3>
+                      <span className="text-[10px] font-bold uppercase bg-purple-50 text-purple-600 px-2.5 py-0.5 rounded-full border border-purple-100">Enterprise</span>
                     </div>
-                    <p className="text-xs text-slate-400">For high-end digital agencies and creative groups.</p>
+                    <p className="text-xs text-slate-500">For high-end digital agencies and creative groups.</p>
                     <div className="py-2">
-                      <p className="text-2xl font-black text-white font-mono">
+                      <p className="text-2xl font-black text-slate-900 font-mono">
                         {modalBilling === 'yearly' ? 'PKR 85,000' : 'PKR 12,000'}
                       </p>
-                      <p className="text-[10px] text-slate-400">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
+                      <p className="text-[10px] text-slate-500">{modalBilling === 'yearly' ? '/ year' : '/ month'}</p>
                     </div>
-                    <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                    <ul className="space-y-2 text-xs text-slate-600 pt-2">
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                         <span>100% white-label client portals</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                         <span>Custom studio domain hosting</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                         <span>Up to 5 team editor seats</span>
                       </li>
                     </ul>
@@ -1466,7 +1026,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       setShowUpgradeModal(false);
                       navigate(`/checkout?plan=studio&billing=${modalBilling}`);
                     }}
-                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer"
+                    className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl transition-all border border-slate-200/80 hover:border-slate-300 shadow-3xs cursor-pointer"
                   >
                     Upgrade to Studio
                   </button>
@@ -1477,6 +1037,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }

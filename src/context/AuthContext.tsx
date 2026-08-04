@@ -11,13 +11,14 @@ export interface User {
   lastName?: string;
   avatar?: string;
   workspaceName?: string;
+  onboarded?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, role?: 'user' | 'admin') => void;
+  login: (email: string, role?: 'user' | 'admin', userObj?: User) => void;
   logout: () => void;
   decrementCredit: () => boolean;
   updateUser: (fields: Partial<User>) => void;
@@ -49,8 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const login = (email: string, role: 'user' | 'admin' = 'user') => {
-    const newUser: User = {
+  const login = (email: string, role: 'user' | 'admin' = 'user', userObj?: User) => {
+    const newUser: User = userObj || {
       id: `usr-${Date.now()}`,
       email,
       name: email.split('@')[0],
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setUser(newUser);
     localStorage.setItem('briefora_user', JSON.stringify(newUser));
+    localStorage.setItem('briefora_current_user', JSON.stringify(newUser));
   };
 
   const logout = () => {
