@@ -684,6 +684,13 @@ export const getAdminCheckoutConfig = (): CheckoutConfig => {
       if (parsed.whatsAppConfig?.number === "923299482074" || parsed.whatsAppConfig?.number === "03299482074") {
         parsed.whatsAppConfig.number = "03150106504";
       }
+      // Force update JazzCash Wallet details to:
+      // Name: Saif ur Rehman
+      // Phone Number: 03112075467
+      if (parsed.accountDetails) {
+        parsed.accountDetails.accountTitle = "Saif ur Rehman";
+        parsed.accountDetails.mobileAccountNumber = "03112075467";
+      }
       return { ...defaultCheckoutConfig, ...parsed };
     } catch {}
   }

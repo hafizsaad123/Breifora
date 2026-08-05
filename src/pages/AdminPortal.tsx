@@ -432,6 +432,13 @@ export default function AdminPortal() {
   useEffect(() => { localStorage.setItem('briefora_contact_submissions', JSON.stringify(submissions)); }, [submissions]);
   useEffect(() => { localStorage.setItem('briefora_admin_testimonials', JSON.stringify(testimonials)); }, [testimonials]);
 
+  // Load live Supabase user records when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUsersFromSupabase();
+    }
+  }, [isAuthenticated]);
+
   // Auth Handlers
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -477,11 +484,86 @@ export default function AdminPortal() {
     showToast(`User ${newUser.name} created!`);
   };
 
-  const handleDeleteUser = (id: string) => {
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  const fetchUsersFromSupabase = async () => {
+    if (!supabase) return;
+    setIsLoadingUsers(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        const mappedUsers: AdminUser[] = data.map((p: any) => ({
+          id: p.id,
+          name: p.name || p.first_name || 'Anonymous User',
+          email: p.email || 'no-email@briefora.com',
+          plan: p.plan || 'Free',
+          status: p.status || 'Active',
+          createdAt: p.created_at ? p.created_at.split('T')[0] : 'N/A',
+          onboarded: p.onboarded || p.onboarding_completed || false,
+          briefsCount: p.briefs_count || p.briefsCount || 0
+        }));
+        setUsers(mappedUsers);
+      }
+    } catch (err) {
+      console.error('Failed to fetch live profiles from Supabase:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const handleUpdateUserPlan = async (userId: string, newPlan: 'Starter' | 'Pro' | 'Studio' | 'Free') => {
+    const credits = newPlan === 'Studio' ? 100 : newPlan === 'Pro' ? 20 : newPlan === 'Starter' ? 5 : 1;
+    
+    // Optimistic local state update
+    setUsers(prev => prev.map(usr => usr.id === userId ? { ...usr, plan: newPlan } : usr));
+    
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            plan: newPlan,
+            free_credits: credits,
+            onboarded: true,
+            onboarding_completed: true
+          })
+          .eq('id', userId);
+          
+        if (error) {
+          showToast(`Error updating plan: ${error.message}`);
+          fetchUsersFromSupabase();
+        } else {
+          showToast(`Plan updated to ${newPlan} successfully!`);
+          addAuditLog('ACTIVATE_SUBSCRIPTION', `User ${userId} set to ${newPlan}`);
+          fetchUsersFromSupabase();
+        }
+      } catch (err: any) {
+        console.error(err);
+        showToast('Database connection error');
+        fetchUsersFromSupabase();
+      }
+    } else {
+      showToast('Plan updated locally!');
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
     const u = users.find(usr => usr.id === id);
-    setUsers(users.filter(u => u.id !== id));
+    setUsers(users.filter(usr => usr.id !== id));
     addAuditLog('DELETE_USER', u ? u.name : id);
     showToast('User deleted');
+
+    if (supabase) {
+      try {
+        await supabase.from('profiles').delete().eq('id', id);
+      } catch (err) {
+        console.error('Failed to delete profile from Supabase:', err);
+      }
+    }
   };
 
   const handleDeleteBrief = (id: string) => {
@@ -2379,6 +2461,15 @@ export default function AdminPortal() {
                 <p className="text-slate-500 text-xs mt-1">Manage active credentials, subscriber status, and direct profile states.</p>
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto self-start sm:self-auto">
+                <button
+                  onClick={fetchUsersFromSupabase}
+                  disabled={isLoadingUsers}
+                  className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 cursor-pointer transition-all shadow-xs disabled:opacity-50"
+                  title="Force Synchronize with Supabase database"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoadingUsers ? 'animate-spin' : ''}`} />
+                  {isLoadingUsers ? 'Syncing...' : 'Sync Live Database'}
+                </button>
                 <button onClick={() => setIsAddUserOpen(true)} className="px-4 py-2.5 bg-[#2516FF] hover:bg-[#1d11cc] text-white rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 cursor-pointer transition-colors shadow-lg shadow-[#2516FF]/10">
                   <Plus className="w-4 h-4" /> Add User Account
                 </button>
@@ -2401,6 +2492,7 @@ export default function AdminPortal() {
               >
                 <option value="All">All Subscription Plans</option>
                 <option value="Free">Free Plan</option>
+                <option value="Starter">Starter Plan</option>
                 <option value="Pro">Pro Plan</option>
                 <option value="Studio">Studio Plan</option>
               </select>
@@ -2437,6 +2529,7 @@ export default function AdminPortal() {
                         <span className={`px-2.5 py-1 text-[10px] font-black tracking-wider rounded-md uppercase ${
                           u.plan === 'Studio' ? 'bg-primary-light text-primary border border-primary/20' :
                           u.plan === 'Pro' ? 'bg-primary-light/80 text-primary border border-primary/10' :
+                          u.plan === 'Starter' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                           'bg-slate-100 text-slate-600 border border-slate-200/50'
                         }`}>
                           {u.plan}
@@ -2452,12 +2545,32 @@ export default function AdminPortal() {
                       </td>
                       <td className="p-4 font-mono text-slate-500">{u.createdAt}</td>
                       <td className="p-4 text-right">
-                        <button 
-                          onClick={() => handleDeleteUser(u.id)} 
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase hidden md:inline">Quick Activate:</span>
+                            <select
+                              value={u.plan}
+                              onChange={async (e) => {
+                                const newPlan = e.target.value as 'Starter' | 'Pro' | 'Studio' | 'Free';
+                                await handleUpdateUserPlan(u.id, newPlan);
+                              }}
+                              className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700 focus:outline-none transition-all cursor-pointer"
+                              title="Activate plan immediately"
+                            >
+                              <option value="Free">Free</option>
+                              <option value="Starter">Starter</option>
+                              <option value="Pro">Pro</option>
+                              <option value="Studio">Studio</option>
+                            </select>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteUser(u.id)} 
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

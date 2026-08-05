@@ -136,8 +136,17 @@ export default function Checkout() {
   // PKR Price Calculation
   const pkrPriceNum = useMemo(() => {
     const prices = checkoutConfig.pkrPrices || defaultCheckoutConfig.pkrPrices;
-    const planPrices = prices[planKey] || (planKey === 'starter' ? { monthly: 2500, annual: 17000 } : { monthly: 5000, annual: 35000 });
-    return isYearly ? planPrices.annual : planPrices.monthly;
+    const planPrices = prices[planKey] || (
+      planKey === 'starter' ? { monthly: 2500, annual: 17000 } :
+      planKey === 'studio' ? { monthly: 12000, annual: 85000 } :
+      { monthly: 5000, annual: 35000 }
+    );
+    let amt = isYearly ? planPrices.annual : planPrices.monthly;
+    // Defensive check: if annual price is a monthly breakdown (e.g. < 8000) and it's yearly, scale to 12 months total
+    if (isYearly && amt < 8000 && planKey !== 'starter') {
+      amt = amt * 12;
+    }
+    return amt;
   }, [checkoutConfig.pkrPrices, planKey, isYearly]);
 
   const pkrPriceFormatted = useMemo(() => {
@@ -321,16 +330,24 @@ export default function Checkout() {
               <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block mb-1">
                 {pageText.pkrConvertedLabel}
               </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono tracking-tight">
-                  {pkrPriceFormatted}
-                </span>
-                <span className="text-slate-500 text-xs font-semibold">
-                  {isYearly ? '/ year' : '/ month'}
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono tracking-tight animate-fade-in">
+                    {pkrPriceFormatted}
+                  </span>
+                  <span className="text-slate-500 text-sm font-semibold">
+                    {isYearly ? ` / $${planKey === 'starter' ? 70 : planKey === 'pro' ? 140 : 340} / year` : ` / $${planKey === 'starter' ? 10 : planKey === 'pro' ? 20 : 50} / month`}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-medium">
+                  {isYearly 
+                    ? `Equivalent to PKR ${(Math.round(pkrPriceNum / 12)).toLocaleString()} / $${planKey === 'starter' ? '5.83' : planKey === 'pro' ? '11.66' : '28.33'} per month` 
+                    : `Billed monthly in local currency`
+                  }
+                </div>
               </div>
               {isYearly && pkrPriceNum > 0 && (
-                <p className="text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1">
+                <p className="text-[11px] text-emerald-600 font-bold mt-2.5 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-emerald-600" /> Discounted annual pricing rate applied
                 </p>
               )}

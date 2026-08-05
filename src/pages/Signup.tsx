@@ -337,16 +337,33 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const user = session.user;
+        
+        let profileData: any = null;
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (!error && data) {
+            profileData = data;
+          }
+        } catch (profileErr) {
+          console.warn('Error fetching active session profile:', profileErr);
+        }
+
+        const isUserOnboarded = profileData?.onboarding_completed ?? profileData?.onboarded ?? user.user_metadata?.onboarded ?? false;
+
         const localUser = {
           email: user.email,
-          firstName: user.user_metadata?.first_name || 'User',
-          lastName: user.user_metadata?.last_name || '',
-          avatar: user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-          workspaceName: user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
-          userRole: user.user_metadata?.user_role || 'Agency Partner',
-          industryFocus: user.user_metadata?.industry_focus || 'B2B Branding & Identity',
-          priorities: user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
-          onboarded: user.user_metadata?.onboarded || false
+          firstName: profileData?.firstName || profileData?.first_name || user.user_metadata?.first_name || 'User',
+          lastName: profileData?.lastName || profileData?.last_name || user.user_metadata?.last_name || '',
+          avatar: profileData?.avatar || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: profileData?.workspaceName || profileData?.workspace_name || user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: profileData?.userRole || profileData?.user_role || user.user_metadata?.user_role || 'Agency Partner',
+          industryFocus: profileData?.industryFocus || profileData?.industry_focus || user.user_metadata?.industry_focus || 'B2B Branding & Identity',
+          priorities: profileData?.priorities || user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: isUserOnboarded
         };
         localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
         login(localUser.email || '', 'user', { ...localUser, id: user.id, name: localUser.firstName } as any);
@@ -358,24 +375,43 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           } else {
             navigate('/dashboard');
           }
+        } else if (authMode === 'onboarding' && isUserOnboarded) {
+          navigate('/dashboard');
         }
       }
     };
     checkActiveSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const user = session.user;
+        
+        let profileData: any = null;
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (!error && data) {
+            profileData = data;
+          }
+        } catch (profileErr) {
+          console.warn('Error fetching auth state changed profile:', profileErr);
+        }
+
+        const isUserOnboarded = profileData?.onboarding_completed ?? profileData?.onboarded ?? user.user_metadata?.onboarded ?? false;
+
         const localUser = {
           email: user.email,
-          firstName: user.user_metadata?.first_name || 'User',
-          lastName: user.user_metadata?.last_name || '',
-          avatar: user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-          workspaceName: user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
-          userRole: user.user_metadata?.user_role || 'Agency Partner',
-          industryFocus: user.user_metadata?.industry_focus || 'B2B Branding & Identity',
-          priorities: user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
-          onboarded: user.user_metadata?.onboarded || false
+          firstName: profileData?.firstName || profileData?.first_name || user.user_metadata?.first_name || 'User',
+          lastName: profileData?.lastName || profileData?.last_name || user.user_metadata?.last_name || '',
+          avatar: profileData?.avatar || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: profileData?.workspaceName || profileData?.workspace_name || user.user_metadata?.workspace_name || `${user.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: profileData?.userRole || profileData?.user_role || user.user_metadata?.user_role || 'Agency Partner',
+          industryFocus: profileData?.industryFocus || profileData?.industry_focus || user.user_metadata?.industry_focus || 'B2B Branding & Identity',
+          priorities: profileData?.priorities || user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: isUserOnboarded
         };
         localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
         login(localUser.email || '', 'user', { ...localUser, id: user.id, name: localUser.firstName } as any);
@@ -445,10 +481,11 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     }
 
     setIsSubmitting(true);
+    let activeUserId = `usr-${Date.now()}`;
     try {
       // Try Supabase auth, but don't block user if rate limit or network error occurs
       try {
-        await supabase.auth.signUp({
+        const { data: signUpData } = await supabase.auth.signUp({
           email: email.toLowerCase(),
           password: password,
           options: {
@@ -464,6 +501,22 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
             }
           }
         });
+        if (signUpData?.user) {
+          activeUserId = signUpData.user.id;
+          // Insert initial profile record in profiles table
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: signUpData.user.id,
+              email: email.toLowerCase(),
+              name: `${firstName} ${lastName}`.trim(),
+              onboarded: false,
+              onboarding_completed: false,
+              plan: 'Free',
+              free_credits: 1,
+              created_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+        }
       } catch (sbErr) {
         console.warn('Supabase auth bypass (rate limit fallback):', sbErr);
       }
@@ -542,16 +595,32 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       const localFound = users.find((u: any) => u.email.toLowerCase() === loginEmail.toLowerCase());
 
       if (sbUser) {
+        let profileData: any = null;
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', sbUser.id)
+            .maybeSingle();
+          if (!error && data) {
+            profileData = data;
+          }
+        } catch (profileErr) {
+          console.warn('Error fetching profiles on login:', profileErr);
+        }
+
+        const isUserOnboarded = profileData?.onboarding_completed ?? profileData?.onboarded ?? sbUser.user_metadata?.onboarded ?? localFound?.onboarded ?? false;
+
         const localUser = {
           email: sbUser.email,
-          firstName: sbUser.user_metadata?.first_name || localFound?.firstName || 'User',
-          lastName: sbUser.user_metadata?.last_name || localFound?.lastName || '',
-          avatar: sbUser.user_metadata?.avatar || localFound?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-          workspaceName: sbUser.user_metadata?.workspace_name || localFound?.workspaceName || `${sbUser.user_metadata?.last_name || 'My'} Strategy Deck`,
-          userRole: sbUser.user_metadata?.user_role || localFound?.userRole || 'Agency Partner',
-          industryFocus: sbUser.user_metadata?.industry_focus || localFound?.industryFocus || 'B2B Branding & Identity',
-          priorities: sbUser.user_metadata?.priorities || localFound?.priorities || ['Auto-generating detailed client briefs'],
-          onboarded: sbUser.user_metadata?.onboarded ?? localFound?.onboarded ?? false
+          firstName: profileData?.firstName || profileData?.first_name || sbUser.user_metadata?.first_name || localFound?.firstName || 'User',
+          lastName: profileData?.lastName || profileData?.last_name || sbUser.user_metadata?.last_name || localFound?.lastName || '',
+          avatar: profileData?.avatar || sbUser.user_metadata?.avatar || localFound?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+          workspaceName: profileData?.workspaceName || profileData?.workspace_name || sbUser.user_metadata?.workspace_name || localFound?.workspaceName || `${sbUser.user_metadata?.last_name || 'My'} Strategy Deck`,
+          userRole: profileData?.userRole || profileData?.user_role || sbUser.user_metadata?.user_role || localFound?.userRole || 'Agency Partner',
+          industryFocus: profileData?.industryFocus || profileData?.industry_focus || sbUser.user_metadata?.industry_focus || localFound?.industryFocus || 'B2B Branding & Identity',
+          priorities: profileData?.priorities || sbUser.user_metadata?.priorities || localFound?.priorities || ['Auto-generating detailed client briefs'],
+          onboarded: isUserOnboarded
         };
 
         localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
@@ -559,7 +628,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
 
         setTimeout(() => {
           const redirectUrl = new URLSearchParams(location.search).get('redirect');
-          if (localUser.onboarded) {
+          if (isUserOnboarded) {
             if (redirectUrl) {
               navigate(redirectUrl);
             } else {
@@ -766,9 +835,26 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
             onboarded: true
           }
         });
+
+        // Upsert onboarding completion to profiles table
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: session.user.id,
+            email: completedUser.email,
+            name: `${completedUser.firstName} ${completedUser.lastName}`.trim(),
+            onboarded: true,
+            onboarding_completed: true,
+            workspace_name: completedUser.workspaceName,
+            user_role: completedUser.userRole,
+            industry_focus: completedUser.industryFocus,
+            plan: completedUser.subscription_status || 'Free',
+            free_credits: completedUser.free_credits !== undefined ? completedUser.free_credits : 1,
+            created_at: new Date().toISOString()
+          }, { onConflict: 'id' });
       }
     } catch (authErr) {
-      console.warn("Failed to sync onboarding details to Supabase Auth metadata:", authErr);
+      console.warn("Failed to sync onboarding details to Supabase Auth metadata or profiles:", authErr);
     }
 
     // Write back to registry list
