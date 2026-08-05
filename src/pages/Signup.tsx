@@ -310,12 +310,13 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   const [confirmFirstName, setConfirmFirstName] = useState('');
   const [confirmLastName, setConfirmLastName] = useState('');
   const [workspaceName, setWorkspaceName] = useState('');
-  const [userRole, setUserRole] = useState('Brand Strategist');
-  const [industryFocus, setIndustryFocus] = useState('B2B Branding & Identity');
+  const [workspaceNameTouched, setWorkspaceNameTouched] = useState(false);
+  const [userRole, setUserRole] = useState('Strategist');
+  const [industryFocus, setIndustryFocus] = useState('UI/UX & Digital Products');
   const [selectedAvatar, setSelectedAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80');
-  const [priorities, setPriorities] = useState<string[]>(['Auto-generating detailed client briefs']);
+  const [priorities, setPriorities] = useState<string[]>(['Auto-generating detailed client strategy briefs']);
   const [onboardingProgress, setOnboardingProgress] = useState(0);
-  const [onboardingStatusText, setOnboardingStatusText] = useState('Registering secure workspace...');
+  const [onboardingStatusText, setOnboardingStatusText] = useState('Personalizing your creative workspace...');
 
   // Initialize users in local storage if not existing
   useEffect(() => {
@@ -325,11 +326,20 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     }
   }, []);
 
-  // Clear feedback messages on route change
+  // Clear feedback messages on route change and check for notice param
   useEffect(() => {
-    setErrorMessage('');
+    const notice = new URLSearchParams(location.search).get('notice');
+    if (notice === 'deleted') {
+      setErrorMessage('Account deleted by admin');
+    } else if (notice === 'inactive') {
+      setErrorMessage('Your account is currently inactive. Please contact support.');
+    } else if (notice === 'blocked') {
+      setErrorMessage('Your account has been blocked by an administrator.');
+    } else {
+      setErrorMessage('');
+    }
     setSuccessMessage('');
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   // Sync Supabase Auth Session and redirects
   useEffect(() => {
@@ -353,6 +363,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
         }
 
         const isUserOnboarded = profileData?.onboarding_completed ?? profileData?.onboarded ?? user.user_metadata?.onboarded ?? false;
+        const planStatus = (profileData?.plan?.toLowerCase() || 'free') as 'free' | 'starter' | 'pro' | 'studio';
 
         const localUser = {
           email: user.email,
@@ -363,7 +374,9 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           userRole: profileData?.userRole || profileData?.user_role || user.user_metadata?.user_role || 'Agency Partner',
           industryFocus: profileData?.industryFocus || profileData?.industry_focus || user.user_metadata?.industry_focus || 'B2B Branding & Identity',
           priorities: profileData?.priorities || user.user_metadata?.priorities || ['Auto-generating detailed client briefs'],
-          onboarded: isUserOnboarded
+          onboarded: isUserOnboarded,
+          subscription_status: planStatus,
+          free_credits: profileData?.free_credits !== undefined ? profileData.free_credits : 1
         };
         localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
         login(localUser.email || '', 'user', { ...localUser, id: user.id, name: localUser.firstName } as any);
@@ -373,10 +386,16 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           if (redirectUrl) {
             navigate(redirectUrl);
           } else {
-            navigate('/dashboard');
+            if (isUserOnboarded) {
+              navigate('/dashboard');
+            } else {
+              navigate('/onboarding');
+            }
           }
         } else if (authMode === 'onboarding' && isUserOnboarded) {
           navigate('/dashboard');
+        } else if (authMode === 'dashboard' && !isUserOnboarded) {
+          navigate('/onboarding');
         }
       }
     };
@@ -432,7 +451,11 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           const parsed = JSON.parse(current);
           setConfirmFirstName(parsed.firstName || '');
           setConfirmLastName(parsed.lastName || '');
-          setWorkspaceName(parsed.lastName ? `${parsed.lastName} Workspace` : 'My Strategy Hub');
+          if (parsed.firstName) {
+            setWorkspaceName(`${parsed.firstName}'s Studio`);
+          } else {
+            setWorkspaceName('My Strategy Hub');
+          }
           if (parsed.avatar) setSelectedAvatar(parsed.avatar);
         } catch (e) {
           console.error(e);
@@ -440,6 +463,13 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       }
     }
   }, [authMode]);
+
+  // Dynamically update workspace name based on typed first name if untouched
+  useEffect(() => {
+    if (authMode === 'onboarding' && !workspaceNameTouched && confirmFirstName) {
+      setWorkspaceName(`${confirmFirstName}'s Studio`);
+    }
+  }, [confirmFirstName, workspaceNameTouched, authMode]);
 
   // Helper helper to get registered users
   const getRegisteredUsers = () => {
@@ -609,7 +639,26 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           console.warn('Error fetching profiles on login:', profileErr);
         }
 
+        const accountStatus = (profileData?.status?.toLowerCase() || 'active');
+        if (accountStatus === 'inactive') {
+          setErrorMessage('Your account is currently inactive. Please contact support.');
+          setIsSubmitting(false);
+          try {
+            await supabase.auth.signOut();
+          } catch (e) {}
+          return;
+        }
+        if (accountStatus === 'blocked') {
+          setErrorMessage('Your account has been blocked by an administrator.');
+          setIsSubmitting(false);
+          try {
+            await supabase.auth.signOut();
+          } catch (e) {}
+          return;
+        }
+
         const isUserOnboarded = profileData?.onboarding_completed ?? profileData?.onboarded ?? sbUser.user_metadata?.onboarded ?? localFound?.onboarded ?? false;
+        const planStatus = (profileData?.plan?.toLowerCase() || 'free') as 'free' | 'starter' | 'pro' | 'studio';
 
         const localUser = {
           email: sbUser.email,
@@ -620,10 +669,13 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           userRole: profileData?.userRole || profileData?.user_role || sbUser.user_metadata?.user_role || localFound?.userRole || 'Agency Partner',
           industryFocus: profileData?.industryFocus || profileData?.industry_focus || sbUser.user_metadata?.industry_focus || localFound?.industryFocus || 'B2B Branding & Identity',
           priorities: profileData?.priorities || sbUser.user_metadata?.priorities || localFound?.priorities || ['Auto-generating detailed client briefs'],
-          onboarded: isUserOnboarded
+          onboarded: isUserOnboarded,
+          subscription_status: planStatus,
+          free_credits: profileData?.free_credits !== undefined ? profileData.free_credits : 1
         };
 
         localStorage.setItem('briefora_current_user', JSON.stringify(localUser));
+        login(localUser.email || '', 'user', { ...localUser, id: sbUser.id, name: localUser.firstName } as any);
         setSuccessMessage('Authenticated successfully! Loading your deck...');
 
         setTimeout(() => {
@@ -770,7 +822,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   const startOnboardingSimulation = () => {
     setOnboardingStep('loading');
     setOnboardingProgress(10);
-    setOnboardingStatusText('Provisioning secure agency credentials...');
+    setOnboardingStatusText('Personalizing your creative workspace...');
 
     const interval = setInterval(() => {
       setOnboardingProgress((prev) => {
@@ -781,13 +833,11 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
           return 100;
         }
         
-        // Dynamically rotate loading titles to make onboarding feel incredibly immersive and professional
-        if (next > 75) {
-          setOnboardingStatusText('Curating customized intake briefs...');
-        } else if (next > 45) {
-          setOnboardingStatusText('Configuring brand strategic algorithms...');
-        } else if (next > 25) {
-          setOnboardingStatusText('Establishing local workspaces templates...');
+        // Dynamically rotate loading titles
+        if (next > 50) {
+          setOnboardingStatusText('Allocating 1 Free Strategy Credit...');
+        } else {
+          setOnboardingStatusText('Personalizing your creative workspace...');
         }
         return next;
       });
@@ -812,12 +862,12 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
       lastName: confirmLastName || currentUserObj.lastName || '',
       avatar: selectedAvatar || currentUserObj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
       workspaceName: workspaceName || currentUserObj.workspaceName || 'My Strategy Hub',
-      userRole: userRole || currentUserObj.userRole || 'Brand Strategist',
-      industryFocus: industryFocus || currentUserObj.industryFocus || 'B2B Branding & Identity',
-      priorities: priorities && priorities.length > 0 ? priorities : ['Auto-generating detailed client briefs'],
+      userRole: userRole || currentUserObj.userRole || 'Strategist',
+      industryFocus: industryFocus || currentUserObj.industryFocus || 'UI/UX & Digital Products',
+      priorities: priorities && priorities.length > 0 ? priorities : ['Auto-generating detailed client strategy briefs'],
       onboarded: true,
-      free_credits: currentUserObj.free_credits !== undefined ? currentUserObj.free_credits : 1,
-      subscription_status: currentUserObj.subscription_status || 'free'
+      free_credits: 1,
+      subscription_status: 'free'
     };
 
     try {
@@ -843,13 +893,16 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
             id: session.user.id,
             email: completedUser.email,
             name: `${completedUser.firstName} ${completedUser.lastName}`.trim(),
+            full_name: `${completedUser.firstName} ${completedUser.lastName}`.trim(),
             onboarded: true,
             onboarding_completed: true,
             workspace_name: completedUser.workspaceName,
             user_role: completedUser.userRole,
+            primary_role: completedUser.userRole,
             industry_focus: completedUser.industryFocus,
-            plan: completedUser.subscription_status || 'Free',
-            free_credits: completedUser.free_credits !== undefined ? completedUser.free_credits : 1,
+            plan: 'free',
+            subscription_status: 'free',
+            free_credits: 1,
             created_at: new Date().toISOString()
           }, { onConflict: 'id' });
       }
@@ -894,11 +947,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
   };
 
   if (authMode === 'dashboard') {
-    return <Dashboard onLogout={async () => {
-      await supabase.auth.signOut();
-      logout();
-      navigate('/login');
-    }} />;
+    return <Dashboard />;
   }
 
   return (
@@ -1048,10 +1097,10 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">Select your primary role</label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { title: 'Strategist', desc: 'Brand planner', value: 'Brand Strategist' },
-                        { title: 'Agency Lead', desc: 'Art director/owner', value: 'Agency Director' },
-                        { title: 'Manager', desc: 'Client relations partner', value: 'Client Partner' },
-                        { title: 'Freelancer', desc: 'Independent consultant', value: 'Freelance Designer' }
+                        { title: 'Strategist', desc: 'Brand & business planner', value: 'Strategist' },
+                        { title: 'UI/UX & Visual Designer', desc: 'Product & identity design', value: 'UI/UX & Visual Designer' },
+                        { title: 'Agency Lead / Owner', desc: 'Art director & business owner', value: 'Agency Lead / Owner' },
+                        { title: 'Freelancer', desc: 'Independent consultant', value: 'Freelancer' }
                       ].map((item) => (
                         <button
                           key={item.value}
@@ -1080,7 +1129,10 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     <input 
                       type="text" 
                       value={workspaceName} 
-                      onChange={(e) => setWorkspaceName(e.target.value)}
+                      onChange={(e) => {
+                        setWorkspaceName(e.target.value);
+                        setWorkspaceNameTouched(true);
+                      }}
                       placeholder="My Strategy Hub" 
                       required
                       className="w-full bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 mt-1 focus:outline-none focus:border-[#2516FF] focus:ring-1 focus:ring-[#2516FF] font-semibold transition-all" 
@@ -1092,10 +1144,10 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">Industry Focus</label>
                     <div className="space-y-1.5">
                       {[
-                        'B2B Branding & Identity',
-                        'Digital Products & Web Strategy',
-                        'Tech Startup Launches',
-                        'Consumer Packaged Goods'
+                        'UI/UX & Digital Products',
+                        'B2B Brand Identity',
+                        'SaaS & Tech Launches',
+                        'E-Commerce Strategy'
                       ].map((focusItem) => (
                         <button
                           key={focusItem}
@@ -1124,10 +1176,9 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                   <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">Which goals are your highest priority? (Select all)</label>
                   <div className="space-y-2">
                     {[
-                      'Auto-generating detailed client briefs',
-                      'Real-time client questionnaires',
-                      'Exporting brand design specifications',
-                      'Client collaboration & workspace reviews'
+                      'Auto-generating detailed client strategy briefs',
+                      'Sending interactive client intake questionnaires',
+                      'Exporting brand specifications & handoffs'
                     ].map((pGoal) => {
                       const isSelected = priorities.includes(pGoal);
                       return (
@@ -1149,15 +1200,18 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                           <div>
                             <p className="text-xs font-bold text-slate-800 leading-none">{pGoal}</p>
                             <p className="text-[10px] text-slate-500 mt-1 leading-tight font-normal">
-                              {pGoal === 'Auto-generating detailed client briefs' && 'Instantly map design inputs into clean briefing decks.'}
-                              {pGoal === 'Real-time client questionnaires' && 'Send links to intake assets, briefs and strategic details.'}
-                              {pGoal === 'Exporting brand design specifications' && 'Generate structured branding requirements for handoff.'}
-                              {pGoal === 'Client collaboration & workspace reviews' && 'Invite clients to comment on tactical brand strategies.'}
+                              {pGoal === 'Auto-generating detailed client strategy briefs' && 'Instantly map design inputs into clean briefing decks.'}
+                              {pGoal === 'Sending interactive client intake questionnaires' && 'Send links to intake assets, briefs and strategic details.'}
+                              {pGoal === 'Exporting brand specifications & handoffs' && 'Generate structured branding requirements for handoff.'}
                             </p>
                           </div>
                         </button>
                       );
                     })}
+                  </div>
+
+                  <div className="flex items-center gap-2 px-3.5 py-2.5 bg-emerald-50/60 border border-emerald-100/60 rounded-xl text-emerald-800 text-[11px] font-bold shadow-xs">
+                    <span>🎁 1 Free Strategy Brief Unlocked</span>
                   </div>
                 </motion.div>
               )}
@@ -1221,7 +1275,7 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
                     onClick={nextOnboardingStep}
                     className="px-6 py-2.5 bg-[#2516FF] text-white font-bold text-xs rounded-full hover:bg-[#1f10e6] transition-all flex items-center gap-1 cursor-pointer border-none ml-auto shadow-sm"
                   >
-                    {onboardingStep === 3 ? 'Launch Workspace' : 'Continue'} 
+                    {onboardingStep === 3 ? 'Launch Workspace & Claim Free Credit' : 'Continue'} 
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

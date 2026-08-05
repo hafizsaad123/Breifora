@@ -24,7 +24,7 @@ interface AdminUser {
   name: string;
   email: string;
   plan: 'Starter' | 'Pro' | 'Studio' | 'Free';
-  status: 'Active' | 'Suspended';
+  status: 'Active' | 'Inactive' | 'Blocked';
   createdAt: string;
   onboarded: boolean;
   briefsCount: number;
@@ -215,6 +215,8 @@ export default function AdminPortal() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPlan, setNewUserPlan] = useState<'Starter' | 'Pro' | 'Studio' | 'Free'>('Pro');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
 
   const [isAddFaqOpen, setIsAddFaqOpen] = useState(false);
   const [newFaqQuestion, setNewFaqQuestion] = useState('');
@@ -463,25 +465,98 @@ export default function AdminPortal() {
     setIsAuthenticated(false);
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserName || !newUserEmail) return;
-    const newUser: AdminUser = {
-      id: `usr-${Date.now()}`,
-      name: newUserName,
-      email: newUserEmail,
-      plan: newUserPlan,
-      status: 'Active',
-      createdAt: new Date().toISOString().split('T')[0],
-      onboarded: true,
-      briefsCount: 0,
-    };
-    setUsers([newUser, ...users]);
-    setIsAddUserOpen(false);
-    setNewUserName('');
-    setNewUserEmail('');
-    addAuditLog('CREATE_USER', `${newUser.name} (${newUser.plan})`);
-    showToast(`User ${newUser.name} created!`);
+    if (!newUserName || !newUserEmail || !newUserPassword) {
+      showToast('Please fill all fields, including password');
+      return;
+    }
+    
+    // Determine free_credits based on selected plan
+    const credits = newUserPlan === 'Studio' ? 100 : newUserPlan === 'Pro' ? 20 : newUserPlan === 'Starter' ? 5 : 1;
+
+    if (supabase) {
+      try {
+        // Create user in Supabase Auth via signUp
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: newUserEmail,
+          password: newUserPassword,
+          options: {
+            data: {
+              first_name: newUserName,
+              onboarded: true,
+            }
+          }
+        });
+
+        if (signUpError) {
+          showToast(`Error creating auth user: ${signUpError.message}`);
+          return;
+        }
+
+        const authUserId = signUpData.user?.id;
+        if (!authUserId) {
+          showToast('Failed to retrieve new user ID.');
+          return;
+        }
+
+        // Insert user profile into public.profiles
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authUserId,
+              email: newUserEmail,
+              name: newUserName,
+              first_name: newUserName,
+              plan: newUserPlan.toLowerCase(),
+              status: 'active',
+              free_credits: credits,
+              onboarded: true,
+              onboarding_completed: true,
+              created_at: new Date().toISOString()
+            }
+          ]);
+
+        if (profileError) {
+          showToast(`User auth created, but profile insertion failed: ${profileError.message}`);
+          return;
+        }
+
+        showToast(`User ${newUserName} created successfully!`);
+        addAuditLog('CREATE_USER', `${newUserName} (${newUserPlan})`);
+        
+        // Refresh users list
+        fetchUsersFromSupabase();
+        
+        // Clear state and close modal
+        setIsAddUserOpen(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+      } catch (err: any) {
+        console.error('Failed to create user:', err);
+        showToast('Database or network connection failed.');
+      }
+    } else {
+      // Offline / local fallback
+      const newUser: AdminUser = {
+        id: `usr-${Date.now()}`,
+        name: newUserName,
+        email: newUserEmail,
+        plan: newUserPlan,
+        status: 'Active',
+        createdAt: new Date().toISOString().split('T')[0],
+        onboarded: true,
+        briefsCount: 0,
+      };
+      setUsers([newUser, ...users]);
+      setIsAddUserOpen(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      showToast(`User ${newUserName} created locally!`);
+    }
   };
 
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -501,7 +576,9 @@ export default function AdminPortal() {
           name: p.name || p.first_name || 'Anonymous User',
           email: p.email || 'no-email@briefora.com',
           plan: p.plan || 'Free',
-          status: p.status || 'Active',
+          status: p.status 
+            ? (p.status.toLowerCase() === 'active' ? 'Active' : p.status.toLowerCase() === 'inactive' ? 'Inactive' : p.status.toLowerCase() === 'blocked' ? 'Blocked' : p.status) 
+            : 'Active',
           createdAt: p.created_at ? p.created_at.split('T')[0] : 'N/A',
           onboarded: p.onboarded || p.onboarding_completed || false,
           briefsCount: p.briefs_count || p.briefsCount || 0
@@ -551,6 +628,37 @@ export default function AdminPortal() {
     }
   };
 
+  const handleUpdateUserStatus = async (userId: string, newStatus: 'Active' | 'Inactive' | 'Blocked') => {
+    // Optimistic local state update
+    setUsers(prev => prev.map(usr => usr.id === userId ? { ...usr, status: newStatus } : usr));
+    
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            status: newStatus.toLowerCase(),
+          })
+          .eq('id', userId);
+          
+        if (error) {
+          showToast(`Error updating status: ${error.message}`);
+          fetchUsersFromSupabase();
+        } else {
+          showToast(`User status set to ${newStatus}!`);
+          addAuditLog('UPDATE_STATUS', `User ${userId} set to ${newStatus}`);
+          fetchUsersFromSupabase();
+        }
+      } catch (err: any) {
+        console.error(err);
+        showToast('Database connection error');
+        fetchUsersFromSupabase();
+      }
+    } else {
+      showToast('Status updated locally!');
+    }
+  };
+
   const handleDeleteUser = async (id: string) => {
     const u = users.find(usr => usr.id === id);
     setUsers(users.filter(usr => usr.id !== id));
@@ -560,6 +668,11 @@ export default function AdminPortal() {
     if (supabase) {
       try {
         await supabase.from('profiles').delete().eq('id', id);
+        try {
+          await supabase.auth.admin.deleteUser(id);
+        } catch (authErr) {
+          console.warn('Could not delete auth user from Supabase (standard behavior without service_role key):', authErr);
+        }
       } catch (err) {
         console.error('Failed to delete profile from Supabase:', err);
       }
@@ -2503,7 +2616,8 @@ export default function AdminPortal() {
               >
                 <option value="All">All User Statuses</option>
                 <option value="Active">Active Account</option>
-                <option value="Suspended">Suspended Account</option>
+                <option value="Inactive">Inactive Account</option>
+                <option value="Blocked">Blocked Account</option>
               </select>
             </div>
 
@@ -2536,12 +2650,22 @@ export default function AdminPortal() {
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black rounded-md ${
-                          u.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' : 'bg-rose-50 text-rose-600 border border-rose-200/50'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          {u.status}
-                        </span>
+                        <select
+                          value={u.status}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value as 'Active' | 'Inactive' | 'Blocked';
+                            await handleUpdateUserStatus(u.id, newStatus);
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-black rounded-md border cursor-pointer focus:outline-none transition-all ${
+                            u.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 
+                            u.status === 'Inactive' ? 'bg-amber-50 text-amber-600 border-amber-200/50' :
+                            'bg-rose-50 text-rose-600 border-rose-200/50'
+                          }`}
+                        >
+                          <option value="Active" className="bg-white text-emerald-600 font-bold">Active</option>
+                          <option value="Inactive" className="bg-white text-amber-600 font-bold">Inactive</option>
+                          <option value="Blocked" className="bg-white text-rose-600 font-bold">Blocked</option>
+                        </select>
                       </td>
                       <td className="p-4 font-mono text-slate-500">{u.createdAt}</td>
                       <td className="p-4 text-right">
@@ -3462,15 +3586,36 @@ export default function AdminPortal() {
                   />
                 </div>
                 <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showNewUserPassword ? "text" : "password"} 
+                      placeholder="••••••••" 
+                      required 
+                      value={newUserPassword} 
+                      onChange={(e) => setNewUserPassword(e.target.value)} 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-12" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewUserPassword(!showNewUserPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      {showNewUserPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+                <div>
                   <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Subscription Plan Level</label>
                   <select 
                     value={newUserPlan} 
                     onChange={(e) => setNewUserPlan(e.target.value as any)} 
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-xs text-slate-700 font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   >
-                    <option value="Free">Free Plan</option>
-                    <option value="Pro">Pro Plan ($9/mo)</option>
-                    <option value="Studio">Studio Plan ($29/mo)</option>
+                    <option value="Free">Free Plan (1 Credit)</option>
+                    <option value="Starter">Starter Plan (5 Credits)</option>
+                    <option value="Pro">Pro Plan (20 Credits)</option>
+                    <option value="Studio">Studio Plan (100 Credits)</option>
                   </select>
                 </div>
                 <button 

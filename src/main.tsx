@@ -3,6 +3,11 @@ import {createRoot} from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App.tsx';
 import Signup from './pages/Signup.tsx';
+import Dashboard from './pages/Dashboard.tsx';
+import BriefsList from './pages/BriefsList.tsx';
+import BriefNew from './pages/BriefNew.tsx';
+import BriefDetail from './pages/BriefDetail.tsx';
+import Settings from './pages/Settings.tsx';
 import AdminPortal from './pages/AdminPortal.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import UsagePolicy from './pages/UsagePolicy.tsx';
@@ -27,8 +32,12 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/forgotpassword" element={<Signup defaultMode="forgot" />} />
               <Route path="/resetpassword" element={<Signup defaultMode="updatepassword" />} />
               <Route path="/onboarding" element={<Signup defaultMode="onboarding" />} />
-              <Route path="/dashboard" element={<Signup defaultMode="dashboard" />} />
-              <Route path="/home" element={<Signup defaultMode="dashboard" />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/home" element={<Dashboard />} />
+              <Route path="/briefs" element={<BriefsList />} />
+              <Route path="/briefs/new" element={<BriefNew />} />
+              <Route path="/briefs/:id" element={<BriefDetail />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminPortal />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/privacypolicy" element={<PrivacyPolicy />} />
