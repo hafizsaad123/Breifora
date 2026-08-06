@@ -30,6 +30,18 @@ interface AdminUser {
   briefsCount: number;
 }
 
+interface Profile {
+  id?: string;
+  name?: string;
+  email?: string;
+  plan?: string;
+  status?: string;
+  free_credits?: number;
+  onboarded?: boolean;
+  onboarding_completed?: boolean;
+  [key: string]: any;
+}
+
 interface AdminBrief {
   id: string;
   title: string;
@@ -560,6 +572,7 @@ export default function AdminPortal() {
   };
 
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   const fetchUsersFromSupabase = async () => {
     if (!supabase) return;
@@ -592,71 +605,79 @@ export default function AdminPortal() {
     }
   };
 
-  const handleUpdateUserPlan = async (userId: string, newPlan: 'Starter' | 'Pro' | 'Studio' | 'Free') => {
-    const credits = newPlan === 'Studio' ? 100 : newPlan === 'Pro' ? 20 : newPlan === 'Starter' ? 5 : 1;
-    
-    // Optimistic local state update
-    setUsers(prev => prev.map(usr => usr.id === userId ? { ...usr, plan: newPlan } : usr));
-    
+  const handleUserUpdate = async (userId: string, updates: Partial<Profile>) => {
+    // Save current state to revert if needed
+    const originalUsers = [...users];
+
+    setUpdatingUserId(userId);
+
+    // Optimistically update local users state
+    setUsers(prev => prev.map(usr => {
+      if (usr.id === userId) {
+        const updated = { ...usr };
+        if (updates.plan !== undefined) {
+          const rawPlan = updates.plan;
+          updated.plan = (rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase()) as any;
+        }
+        if (updates.status !== undefined) {
+          const rawStatus = updates.status;
+          updated.status = (rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase()) as any;
+        }
+        return updated;
+      }
+      return usr;
+    }));
+
     if (supabase) {
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
-          .update({ 
-            plan: newPlan,
-            free_credits: credits,
-            onboarded: true,
-            onboarding_completed: true
-          })
+          .update(updates)
           .eq('id', userId);
-          
+
         if (error) {
-          showToast(`Error updating plan: ${error.message}`);
-          fetchUsersFromSupabase();
+          showToast(`Error updating user: ${error.message}`);
+          setUsers(originalUsers); // revert local state
         } else {
-          showToast(`Plan updated to ${newPlan} successfully!`);
-          addAuditLog('ACTIVATE_SUBSCRIPTION', `User ${userId} set to ${newPlan}`);
-          fetchUsersFromSupabase();
+          const capitalizedPlan = updates.plan ? (updates.plan.charAt(0).toUpperCase() + updates.plan.slice(1).toLowerCase()) : '';
+          const capitalizedStatus = updates.status ? (updates.status.charAt(0).toUpperCase() + updates.status.slice(1).toLowerCase()) : '';
+          const detail = updates.plan 
+            ? `plan updated to ${capitalizedPlan} successfully` 
+            : `status updated to ${capitalizedStatus} successfully`;
+          
+          showToast(`User ${detail}`);
+          addAuditLog('UPDATE_USER', `User ${userId} - ${JSON.stringify(updates)}`);
+          
+          // Trigger sync from Supabase
+          await fetchUsersFromSupabase();
         }
       } catch (err: any) {
-        console.error(err);
-        showToast('Database connection error');
-        fetchUsersFromSupabase();
+        console.error('handleUserUpdate error:', err);
+        showToast('Database mutation error occurred.');
+        setUsers(originalUsers); // revert local state
+      } finally {
+        setUpdatingUserId(null);
       }
     } else {
-      showToast('Plan updated locally!');
+      showToast('Profile updated locally!');
+      setUpdatingUserId(null);
     }
   };
 
+  const handleUpdateUserPlan = async (userId: string, newPlan: 'Starter' | 'Pro' | 'Studio' | 'Free') => {
+    const credits = newPlan === 'Studio' ? 100 : newPlan === 'Pro' ? 20 : newPlan === 'Starter' ? 5 : 1;
+    await handleUserUpdate(userId, {
+      plan: newPlan.toLowerCase(),
+      free_credits: credits,
+      onboarded: true,
+      onboarding_completed: true
+    });
+  };
+
   const handleUpdateUserStatus = async (userId: string, newStatus: 'Active' | 'Inactive' | 'Blocked') => {
-    // Optimistic local state update
-    setUsers(prev => prev.map(usr => usr.id === userId ? { ...usr, status: newStatus } : usr));
-    
-    if (supabase) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ 
-            status: newStatus.toLowerCase(),
-          })
-          .eq('id', userId);
-          
-        if (error) {
-          showToast(`Error updating status: ${error.message}`);
-          fetchUsersFromSupabase();
-        } else {
-          showToast(`User status set to ${newStatus}!`);
-          addAuditLog('UPDATE_STATUS', `User ${userId} set to ${newStatus}`);
-          fetchUsersFromSupabase();
-        }
-      } catch (err: any) {
-        console.error(err);
-        showToast('Database connection error');
-        fetchUsersFromSupabase();
-      }
-    } else {
-      showToast('Status updated locally!');
-    }
+    await handleUserUpdate(userId, {
+      status: newStatus.toLowerCase(),
+    });
   };
 
   const handleDeleteUser = async (id: string) => {
@@ -2650,22 +2671,30 @@ export default function AdminPortal() {
                         </span>
                       </td>
                       <td className="p-4">
-                        <select
-                          value={u.status}
-                          onChange={async (e) => {
-                            const newStatus = e.target.value as 'Active' | 'Inactive' | 'Blocked';
-                            await handleUpdateUserStatus(u.id, newStatus);
-                          }}
-                          className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-black rounded-md border cursor-pointer focus:outline-none transition-all ${
-                            u.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 
-                            u.status === 'Inactive' ? 'bg-amber-50 text-amber-600 border-amber-200/50' :
-                            'bg-rose-50 text-rose-600 border-rose-200/50'
-                          }`}
-                        >
-                          <option value="Active" className="bg-white text-emerald-600 font-bold">Active</option>
-                          <option value="Inactive" className="bg-white text-amber-600 font-bold">Inactive</option>
-                          <option value="Blocked" className="bg-white text-rose-600 font-bold">Blocked</option>
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            disabled={updatingUserId === u.id}
+                            value={u.status}
+                            onChange={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const newStatus = e.target.value as 'Active' | 'Inactive' | 'Blocked';
+                              await handleUpdateUserStatus(u.id, newStatus);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-black rounded-md border focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                              u.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 
+                              u.status === 'Inactive' ? 'bg-amber-50 text-amber-600 border-amber-200/50' :
+                              'bg-rose-50 text-rose-600 border-rose-200/50'
+                            }`}
+                          >
+                            <option value="Active" className="bg-white text-emerald-600 font-bold">Active</option>
+                            <option value="Inactive" className="bg-white text-amber-600 font-bold">Inactive</option>
+                            <option value="Blocked" className="bg-white text-rose-600 font-bold">Blocked</option>
+                          </select>
+                          {updatingUserId === u.id && (
+                            <RefreshCw className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 font-mono text-slate-500">{u.createdAt}</td>
                       <td className="p-4 text-right">
@@ -2673,12 +2702,15 @@ export default function AdminPortal() {
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase hidden md:inline">Quick Activate:</span>
                             <select
+                              disabled={updatingUserId === u.id}
                               value={u.plan}
                               onChange={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 const newPlan = e.target.value as 'Starter' | 'Pro' | 'Studio' | 'Free';
                                 await handleUpdateUserPlan(u.id, newPlan);
                               }}
-                              className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700 focus:outline-none transition-all cursor-pointer"
+                              className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700 focus:outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Activate plan immediately"
                             >
                               <option value="Free">Free</option>

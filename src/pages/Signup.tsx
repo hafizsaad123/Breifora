@@ -401,7 +401,10 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     };
     checkActiveSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        localStorage.removeItem('pending_verification_email');
+      }
       if (session?.user) {
         const user = session.user;
         
@@ -513,12 +516,14 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
     setIsSubmitting(true);
     let activeUserId = `usr-${Date.now()}`;
     try {
+      const redirectTo = `${window.location.origin}/onboarding`;
       // Try Supabase auth, but don't block user if rate limit or network error occurs
       try {
         const { data: signUpData } = await supabase.auth.signUp({
           email: email.toLowerCase(),
           password: password,
           options: {
+            emailRedirectTo: redirectTo,
             data: {
               first_name: firstName,
               last_name: lastName,
@@ -565,10 +570,6 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
         onboarded: false
       };
 
-      // Save session locally
-      localStorage.setItem('briefora_current_user', JSON.stringify(newUser));
-      login(newUser.email, 'user', { ...newUser, id: `usr-${Date.now()}`, name: newUser.firstName } as any);
-      
       // Save to compatibility registry
       const users = getRegisteredUsers();
       const existingIdx = users.findIndex((u: any) => u.email.toLowerCase() === email.toLowerCase());
@@ -579,15 +580,13 @@ export default function Signup({ defaultMode = 'signup' }: SignupProps) {
         saveRegisteredUsers([...users, { ...newUser, password }]);
       }
 
-      setSuccessMessage('Account registered successfully! Welcome aboard.');
+      // Store user email for pending verification
+      localStorage.setItem('pending_verification_email', email.toLowerCase());
+
+      setSuccessMessage('Registration successful! Please check your email to verify your account.');
       setTimeout(() => {
-        const redirectUrl = new URLSearchParams(location.search).get('redirect');
-        if (redirectUrl) {
-          navigate(`/onboarding?redirect=${encodeURIComponent(redirectUrl)}`);
-        } else {
-          navigate('/onboarding');
-        }
-      }, 600);
+        navigate('/verify-email', { state: { email: email.toLowerCase() } });
+      }, 1500);
     } catch (err: any) {
       setErrorMessage(err.message || 'An unexpected error occurred during signup.');
     } finally {

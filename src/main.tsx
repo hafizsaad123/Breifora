@@ -3,11 +3,15 @@ import {createRoot} from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App.tsx';
 import Signup from './pages/Signup.tsx';
+import VerifyEmail from './pages/VerifyEmail.tsx';
+import AuthGuard from './guards/AuthGuard.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import BriefsList from './pages/BriefsList.tsx';
 import BriefNew from './pages/BriefNew.tsx';
 import BriefDetail from './pages/BriefDetail.tsx';
 import Settings from './pages/Settings.tsx';
+import ClientForm from './pages/public/ClientForm.tsx';
+import ClientFormComplete from './pages/public/ClientFormComplete.tsx';
 import AdminPortal from './pages/AdminPortal.tsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.tsx';
 import UsagePolicy from './pages/UsagePolicy.tsx';
@@ -31,15 +35,18 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/login" element={<Signup defaultMode="login" />} />
               <Route path="/forgotpassword" element={<Signup defaultMode="forgot" />} />
               <Route path="/resetpassword" element={<Signup defaultMode="updatepassword" />} />
-              <Route path="/onboarding" element={<Signup defaultMode="onboarding" />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/home" element={<Dashboard />} />
-              <Route path="/briefs" element={<BriefsList />} />
-              <Route path="/briefs/new" element={<BriefNew />} />
-              <Route path="/briefs/:id" element={<BriefDetail />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<AdminPortal />} />
-              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/onboarding" element={<AuthGuard><Signup defaultMode="onboarding" /></AuthGuard>} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/brief/:id" element={<ClientForm />} />
+              <Route path="/brief/:id/complete" element={<ClientFormComplete />} />
+              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+              <Route path="/home" element={<AuthGuard><Dashboard /></AuthGuard>} />
+              <Route path="/briefs" element={<AuthGuard><BriefsList /></AuthGuard>} />
+              <Route path="/briefs/new" element={<AuthGuard><BriefNew /></AuthGuard>} />
+              <Route path="/briefs/:id" element={<AuthGuard><BriefDetail /></AuthGuard>} />
+              <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+              <Route path="/admin" element={<AuthGuard><AdminPortal /></AuthGuard>} />
+              <Route path="/checkout" element={<AuthGuard><Checkout /></AuthGuard>} />
               <Route path="/privacypolicy" element={<PrivacyPolicy />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/usagepolicy" element={<UsagePolicy />} />

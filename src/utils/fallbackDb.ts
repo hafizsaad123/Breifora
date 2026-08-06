@@ -8,6 +8,9 @@ export interface FallbackProfile {
   free_credits: number;
   subscription_status?: string;
   plan?: string;
+  role?: string;
+  industry?: string;
+  avatar?: string;
   onboarding_completed?: boolean;
   onboarded?: boolean;
 }
@@ -64,14 +67,14 @@ export function getFallbackProfile(userId: string): FallbackProfile {
   return {
     id: userId,
     email: "",
-    name: "Saad",
-    full_name: "Saad",
-    workspace_name: "Saad Creative Studio",
-    free_credits: 5,
+    name: "",
+    full_name: "",
+    workspace_name: "",
+    free_credits: 1,
     subscription_status: "free",
     plan: "Free",
-    onboarding_completed: true,
-    onboarded: true
+    onboarding_completed: false,
+    onboarded: false
   };
 }
 
